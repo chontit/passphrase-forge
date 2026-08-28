@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; connect-src 'none'">
+<title>PASSPHRASE FORGE // ENTROPY-TO-KEY</title>
+<style>
+  :root{--bg:#080b10;--panel:#0d141d;--panel2:#111a25;--line:#1d2a38;--amber:#ffb000;--amber-dim:#8a6410;
+    --cyan:#38e8ff;--green:#39ff9e;--red:#ff4d5e;--txt:#c8d6e2;--muted:#647688;--ink:#050709;--violet:#b98bff}
+  body.light{--bg:#e9eef3;--panel:#ffffff;--panel2:#f1f5f9;--line:#c4d0dc;--amber:#a9640a;--amber-dim:#d6a04a;
+    --cyan:#0b7f9e;--green:#0a8f52;--red:#c62b3c;--txt:#182430;--muted:#5c6c7b;--ink:#ffffff;--violet:#6f45c4;
+    background:var(--bg)}
+  body.light .scan{display:none}
+  body.light header h1{text-shadow:none}
+  body.light .out{background:#f5faf6;color:#0a7a45;text-shadow:none}
+  body.light .pill.warn{background:#fdecee}
+  body.light .gauge>span,body.light .cell .v{text-shadow:none}
+  .netbtn{font-family:inherit;letter-spacing:1px;cursor:pointer;color:var(--amber);border-color:var(--amber-dim)}
+  .netbtn:hover{background:var(--amber);color:var(--ink)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:radial-gradient(1200px 500px at 50% -10%,#0f2030 0%,transparent 60%),var(--bg);color:var(--txt);
+    font-family:ui-monospace,"DejaVu Sans Mono","Liberation Mono",Menlo,Consolas,monospace;font-size:14px;line-height:1.5;padding:22px 16px 60px;min-height:100vh}
+  .wrap{max-width:920px;margin:0 auto}
+  .scan{position:fixed;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(180deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px);mix-blend-mode:overlay;opacity:.6}
+  @media (prefers-reduced-motion:reduce){.scan{display:none}}
+  header{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));padding:16px 18px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber);box-shadow:0 0 14px var(--amber)}
+  h1{margin:0;font-size:18px;letter-spacing:2px;color:var(--amber);text-shadow:0 0 10px rgba(255,176,0,.35)}
+  .sub{color:var(--muted);font-size:11.5px;letter-spacing:1px;margin-top:4px}
+  .netbar{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .pill{border:1px solid var(--line);padding:3px 9px;font-size:10.5px;letter-spacing:1px;color:var(--muted);display:inline-flex;gap:6px;align-items:center;background:var(--ink)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
+  .pill.ok{color:var(--green);border-color:var(--green)}
+  .pill.warn{color:var(--red);border-color:var(--red);background:#1a0a0d}
+  .stage{border:1px solid var(--line);background:var(--panel);margin-top:14px;position:relative}
+  .stage>.hd{display:flex;align-items:baseline;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .stage>.hd .num{color:var(--ink);background:var(--amber);font-weight:700;padding:0 7px;font-size:12px;letter-spacing:1px}
+  .stage>.hd .t{color:var(--cyan);letter-spacing:1.5px;font-size:12.5px}
+  .stage>.hd .th{color:var(--muted);font-size:11px;margin-left:auto}
+  .body{padding:14px}
+  label.opt{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line);cursor:pointer;background:var(--ink);user-select:none}
+  label.opt:hover{border-color:var(--amber-dim)}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  @media(max-width:640px){.grid4{grid-template-columns:repeat(2,1fr)}}
+  input[type=checkbox],input[type=radio]{accent-color:var(--amber);width:15px;height:15px}
+  .opt .cnt{margin-left:auto;color:var(--muted);font-size:11px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld small{color:var(--muted);letter-spacing:1px;font-size:10.5px}
+  input[type=text]{background:var(--ink);border:1px solid var(--line);color:var(--txt);font-family:inherit;font-size:13px;padding:8px 10px;outline:none}
+  input[type=text]:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-dim)}
+  #symset{min-width:230px;flex:1}
+  textarea{width:100%;min-height:120px;resize:vertical;letter-spacing:1px;background:var(--ink);border:1px solid var(--line);color:var(--txt);font-family:inherit;font-size:13px;padding:8px 10px;outline:none}
+  /* slider */
+  .slidewrap{display:flex;align-items:center;gap:14px;margin-top:6px}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:6px;background:var(--line);outline:none;flex:1;margin:0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--amber);cursor:pointer;box-shadow:0 0 10px var(--amber)}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;background:var(--amber);border:none;cursor:pointer;box-shadow:0 0 10px var(--amber)}
+  .lenbig{font-size:26px;color:var(--amber);min-width:52px;text-align:right;text-shadow:0 0 8px rgba(255,176,0,.4)}
+  .lenbig small{font-size:11px;color:var(--muted)}
+  .readout{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:12px}
+  @media(max-width:640px){.readout{grid-template-columns:repeat(2,1fr)}}
+  .cell{background:var(--panel2);padding:10px 12px}
+  .cell .k{color:var(--muted);font-size:10px;letter-spacing:1px}
+  .cell .v{color:var(--amber);font-size:17px;margin-top:2px}
+  .cell .v small{font-size:11px;color:var(--muted)}
+  .gauge{height:16px;background:var(--ink);border:1px solid var(--line);margin-top:10px;position:relative;overflow:hidden}
+  .gauge>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber-dim),var(--amber));box-shadow:0 0 12px var(--amber);transition:width .2s}
+  .gauge>i.ok{background:linear-gradient(90deg,#1c7d52,var(--green));box-shadow:0 0 12px var(--green)}
+  .gauge>span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;letter-spacing:1px;color:var(--txt);text-shadow:0 0 4px #000}
+  .strength{display:inline-block;padding:2px 8px;font-size:11px;letter-spacing:1.5px;border:1px solid}
+  .s-crit{color:var(--red);border-color:var(--red)}.s-weak{color:#ffae42;border-color:#ffae42}
+  .s-good{color:var(--cyan);border-color:var(--cyan)}.s-strong{color:var(--green);border-color:var(--green)}
+  .s-max{color:var(--green);border-color:var(--green);box-shadow:0 0 10px rgba(57,255,158,.4)}
+  .btn{font-family:inherit;font-size:13px;letter-spacing:2px;padding:11px 18px;border:1px solid var(--amber);background:transparent;color:var(--amber);cursor:pointer;transition:.15s}
+  .btn:hover:not(:disabled){background:var(--amber);color:var(--ink);box-shadow:0 0 18px rgba(255,176,0,.5)}
+  .btn:disabled{opacity:.35;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
+  .btn.fire{width:100%;font-size:15px;padding:14px}
+  .btn.wipe{border-color:var(--red);color:var(--red)}.btn.wipe:hover{background:var(--red);color:var(--ink);box-shadow:0 0 18px rgba(255,77,94,.5)}
+  .btn.ghost{border-color:var(--line);color:var(--muted)}.btn.ghost:hover{background:var(--panel2);color:var(--txt);box-shadow:none}
+  .btn.salt{border-color:var(--violet);color:var(--violet)}
+  .btn.salt.on{background:var(--violet);color:var(--ink);box-shadow:0 0 16px rgba(185,139,255,.55)}
+  .saltrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .saltstate{font-size:11px;letter-spacing:1px;color:var(--muted)}
+  .saltstate b{color:var(--violet)}
+  .out{border:1px solid var(--amber);background:#0b0f07;padding:16px;margin-top:8px;word-break:break-all;font-size:20px;letter-spacing:2px;color:var(--green);text-shadow:0 0 8px rgba(57,255,158,.35);min-height:56px}
+  .out.hidden{color:transparent;text-shadow:none;user-select:none}
+  .out.hidden::after{content:"•••••••• [ MASKED / ซ่อนไว้ ] ••••••••";color:var(--muted);font-size:13px;letter-spacing:1px}
+  .msg{padding:10px 12px;border:1px solid var(--line);background:var(--ink);font-size:12px;margin-top:8px;color:var(--muted)}
+  .msg.err{border-color:var(--red);color:var(--red)}.msg.ok{border-color:var(--green);color:var(--green)}.msg.warn{border-color:#ffae42;color:#ffae42}
+  details{border:1px solid var(--line);margin-top:10px;background:var(--ink)}
+  summary{padding:9px 12px;cursor:pointer;color:var(--cyan);letter-spacing:1px;font-size:12px;user-select:none}
+  .verify{padding:12px;border-top:1px solid var(--line)}
+  .kv{display:grid;grid-template-columns:160px 1fr;gap:6px 12px;font-size:11.5px}
+  .kv b{color:var(--muted);font-weight:400}.kv code{color:var(--amber);word-break:break-all}
+  .kv code.salt{color:var(--violet)}
+  table.map{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px}
+  table.map th,table.map td{border:1px solid var(--line);padding:4px 6px;text-align:center}
+  table.map th{color:var(--muted);background:var(--panel2);letter-spacing:1px}
+  table.map td .ch{color:var(--green);font-weight:700}
+  .maptbl{max-height:260px;overflow:auto}
+  .foot{color:var(--muted);font-size:11px;line-height:1.7;margin-top:18px;border-top:1px dashed var(--line);padding-top:12px}
+  .foot b{color:var(--amber)}
+  .credit{text-align:center;color:var(--muted);font-size:11px;letter-spacing:1px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+  .credit b{color:var(--amber)}.credit .tv{color:var(--cyan)}
+  .classflags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10.5px}
+  .cf{border:1px solid var(--line);padding:2px 8px;color:var(--muted)}.cf.on{color:var(--green);border-color:var(--green)}
+  /* printable backup card */
+  #cardWrap{display:none;margin-top:12px}
+  #card{background:#fff;color:#111;border:2px solid #000;padding:18px}
+  #card h2{margin:0 0 2px;font-size:15px;letter-spacing:1px;color:#000}
+  #card .meta{font-size:11px;color:#333;margin-bottom:10px}
+  #card .lines{font-size:11px;color:#000;margin:5px 0}
+  #card .lines span{display:inline-block;border-bottom:1px solid #000;min-width:120px;margin:0 8px}
+  #card .sec{border-top:1px dashed #777;margin-top:12px;padding-top:9px}
+  #card .lbl{font-size:10px;letter-spacing:.5px;color:#333}
+  #card .grp{margin:6px 0;line-height:2.1}
+  #card .grp b{display:inline-block;font-weight:700;font-size:14px;color:#000;background:#f0f0f0;border:1px solid #bbb;padding:1px 7px;margin:2px}
+  #card .grp b i{color:#999;font-style:normal;font-size:9px;margin-right:5px}
+  #card .pass{font-size:13px;font-weight:700;color:#000;word-break:break-all;letter-spacing:1px;margin:6px 0;padding:6px;border:1px solid #ccc;background:#fafafa}
+  #card .crc{font-weight:700;letter-spacing:2px;color:#000}
+  #card .rolls{font-size:11px;color:#000;word-break:break-word;background:#f7f7f7;border:1px solid #ccc;padding:6px;margin-top:4px}
+  #card .warn{font-size:10px;color:#000;border:1.5px solid #000;padding:7px 9px;margin-top:12px;background:#f2f2f2;line-height:1.6}
+  @media print{
+    body{background:#fff !important;margin:0;padding:0;color:#000}
+    .scan{display:none !important}
+    body.printing>*{display:none !important}
+    body.printing>#cardWrap{display:block !important;position:static !important;width:auto;margin:0;padding:0}
+    body.printing #cardWrap .noprint{display:none !important}
+    #card{border:2px solid #000;margin:0}
+  }
+</style>
+</head>
+<body>
+<div class="scan"></div>
+<div class="wrap">
+  <header>
+    <h1>⬡ PASSPHRASE FORGE</h1>
+    <div class="sub">ENTROPY-TO-KEY GENERATOR // สร้างรหัสผ่านความปลอดภัยสูงจาก entropy กายภาพ (เหรียญ/ลูกเต๋า/ไพ่)</div>
+    <div class="netbar">
+      <button class="pill netbtn" id="themeBtn" title="สลับธีมเข้ม/สว่าง">☀ LIGHT</button>
+      <span class="pill" id="netPill" title="สถานะจาก navigator.onLine ของ OS/เบราว์เซอร์ · การกันส่งข้อมูลออกจริงบังคับด้วย CSP connect-src 'none'"><span class="dot" id="netdot"></span> <span id="netTxt">CHECKING…</span></span>
+      <span class="pill">CSP: connect-src 'none'</span>
+      <span class="pill">TAILS / TOR · file://</span>
+    </div>
+  </header>
+
+  <!-- STAGE 1 -->
+  <section class="stage">
+    <div class="hd"><span class="num">01</span><span class="t">OUTPUT SPEC</span><span class="th">ชุดตัวอักษร & ความยาว</span></div>
+    <div class="body">
+      <div class="grid4">
+        <label class="opt"><input type="checkbox" id="c_upper" checked> A–Z <span class="cnt">26</span></label>
+        <label class="opt"><input type="checkbox" id="c_lower" checked> a–z <span class="cnt">26</span></label>
+        <label class="opt"><input type="checkbox" id="c_digit" checked> 0–9 <span class="cnt">10</span></label>
+        <label class="opt"><input type="checkbox" id="c_sym" checked> SYMBOL <span class="cnt" id="symcnt">16</span></label>
+      </div>
+      <div class="row">
+        <div class="fld" style="flex:1">
+          <small>SYMBOL SET / แก้ไขสัญลักษณ์ได้</small>
+          <input type="text" id="symset" spellcheck="false" autocomplete="off" value="!@#$%^&amp;*()-_=+?">
+        </div>
+      </div>
+      <label class="opt" style="margin-top:12px">
+        <input type="checkbox" id="unambig"> UNAMBIGUOUS / ตัดอักขระที่สับสน
+        <span class="cnt" id="unambigHint">off</span>
+      </label>
+      <div class="fld" style="margin-top:12px">
+        <small>LENGTH / ความยาว (12–50)</small>
+        <div class="slidewrap">
+          <input type="range" id="len" min="12" max="50" value="24" step="1">
+          <div class="lenbig"><span id="lenval">24</span><small> ch</small></div>
+        </div>
+      </div>
+      <div class="readout">
+        <div class="cell"><div class="k">ALPHABET K</div><div class="v" id="rK">–</div></div>
+        <div class="cell"><div class="k">BITS / CHAR</div><div class="v" id="rBPC">–</div></div>
+        <div class="cell"><div class="k">TARGET ENTROPY</div><div class="v" id="rTgt">– <small>bit</small></div></div>
+        <div class="cell"><div class="k">STRENGTH</div><div class="v"><span id="rStr" class="strength s-good">–</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE 2 -->
+  <section class="stage">
+    <div class="hd"><span class="num">02</span><span class="t">ENTROPY SOURCE</span><span class="th">แหล่งสุ่มกายภาพ</span></div>
+    <div class="body">
+      <div class="grid4">
+        <label class="opt"><input type="radio" name="src" value="coin" checked> COIN / เหรียญ <span class="cnt">1.00 b</span></label>
+        <label class="opt"><input type="radio" name="src" value="d6"> D6 / ลูกเต๋า <span class="cnt">2.585 b</span></label>
+        <label class="opt"><input type="radio" name="src" value="d16"> D16 / เต๋าเลขฐาน16 <span class="cnt">4.00 b</span></label>
+        <label class="opt"><input type="radio" name="src" value="cards"> CARDS / ไพ่ 52 <span class="cnt">5.70↓ b</span></label>
+      </div>
+      <div class="msg" id="srcHelp"></div>
+    </div>
+  </section>
+
+  <!-- STAGE 3 -->
+  <section class="stage">
+    <div class="hd"><span class="num">03</span><span class="t">ENTROPY INPUT</span><span class="th">ป้อนผลการสุ่ม</span></div>
+    <div class="body">
+      <textarea id="entropy" spellcheck="false" autocomplete="off" placeholder=""></textarea>
+      <div class="gauge"><i id="poolBar"></i><span id="poolTxt">0 / 0 bit</span></div>
+      <div class="readout" style="grid-template-columns:repeat(3,1fr)">
+        <div class="cell"><div class="k" id="rRollsK">ROLLS ACCEPTED</div><div class="v" id="rRolls">0</div></div>
+        <div class="cell"><div class="k">ENTROPY POOL</div><div class="v" id="rBits">0 <small>bit</small></div></div>
+        <div class="cell"><div class="k">STATUS</div><div class="v" id="rPool" style="font-size:13px">WAITING</div></div>
+      </div>
+      <div class="msg warn" id="varWarn" style="display:none"></div>
+      <div class="msg" id="pasteHint" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- STAGE 4 -->
+  <section class="stage">
+    <div class="hd"><span class="num">04</span><span class="t">DERIVE</span><span class="th">ประมวลผล</span></div>
+    <div class="body">
+      <div class="saltrow">
+        <button class="btn salt" id="saltBtn">✦ MIX SYSTEM ENTROPY (SALT)</button>
+        <span class="saltstate" id="saltState"><b>OFF</b> — deterministic จากผลสุ่มกายภาพล้วน (verify ได้)</span>
+      </div>
+      <button class="btn fire" id="gen" disabled>⟶ GENERATE PASSPHRASE / สร้างรหัส (ARM &amp; FIRE)</button>
+      <div class="msg" id="genMsg" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- STAGE 5 -->
+  <section class="stage">
+    <div class="hd"><span class="num">05</span><span class="t">OUTPUT</span><span class="th">ผลลัพธ์ & การตรวจสอบ</span></div>
+    <div class="body">
+      <div class="out hidden" id="out"></div>
+      <div class="classflags" id="flags"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="mask">👁 SHOW / HIDE</button>
+        <button class="btn ghost" id="copy">⎘ COPY</button>
+        <button class="btn ghost" id="cardBtn">🖶 BACKUP CARD</button>
+        <button class="btn wipe" id="wipe">✕ PANIC WIPE / ล้างทั้งหมด</button>
+      </div>
+      <details id="verifyBox" style="display:none">
+        <summary>▸ VERIFY DERIVATION / ตรวจสอบการคำนวณด้วยตนเอง (Don't Trust, Verify)</summary>
+        <div class="verify">
+          <div class="kv">
+            <b>mode</b><code id="vMode"></code>
+            <b>delivered entropy</b><code id="vEnt"></code>
+            <b>source</b><code id="vSrc"></code>
+            <b>draws used (n)</b><code id="vN"></code>
+            <b>alphabet size (K)</b><code id="vK"></code>
+            <b>length (L)</b><code id="vL"></code>
+            <b>R = Πradix</b><code id="vR"></code>
+            <b>K^L</b><code id="vKN"></code>
+            <b>E (physical)</b><code id="vE"></code>
+            <b>S (system salt)</b><code id="vS" class="salt"></code>
+            <b>E' final</b><code id="vEf"></code>
+            <b>U = E' mod K^L</b><code id="vU"></code>
+          </div>
+          <div class="maptbl">
+            <table class="map"><thead><tr><th>#</th><th>base-K digit</th><th>→ char</th></tr></thead>
+            <tbody id="mapBody"></tbody></table>
+          </div>
+        </div>
+      </details>
+
+      <div id="cardWrap">
+        <div class="row noprint" style="margin:10px 0">
+          <button class="btn" id="printBtn">🖶 PRINT / พิมพ์</button>
+          <button class="btn ghost" id="cardClose">✕ CLOSE PREVIEW</button>
+        </div>
+        <div id="card"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>วิธีใช้บน Tails/Tor:</b> คัดลอกไฟล์ลง USB persistent → เปิดด้วย Tor Browser ผ่าน <code>file://</code> (อนุญาต JS หน้านี้) → ตัดเน็ตได้เลย<br>
+    <b>ขั้นตอน:</b> [01] เลือก charset + เลื่อนความยาว → [02] เลือกแหล่ง → [03] สุ่มจริงแล้วป้อน จน POOL เต็ม → [04] (เลือก SALT ได้) GENERATE → [05] copy แล้ว WIPE<br>
+    <b>รูปแบบป้อน:</b> COIN = 0/1 หรือ H/T · D6 = 1–6 · D16 = 0–9,A–F · CARDS = อันดับ+ดอก เช่น <code>AS KH 10D 7C QS</code> (ดอก S/H/D/C · ครบ 52 ใบให้สับใหม่แล้วจั่วต่อได้)<br>
+    <b>SALT:</b> ผสม system entropy (CSPRNG) แบบ E' = (E<sub>ทอย</sub> + S) mod R — ทำให้<b>ไม่ deterministic</b> จากลูกเต๋าอย่างเดียว ป้องกันกรณีลูกเต๋าลำเอียง/คาดเดาได้ · แต่<b>ไม่ลด</b>ปริมาณ entropy กายภาพที่ต้องเก็บ (defense-in-depth) · ถ้าเปิด SALT ผลจะ verify ซ้ำไม่ได้โดยตั้งใจ<br>
+    <b>หลักการ:</b> รวมผลสุ่มเป็นจำนวนเต็มระบบ mixed-radix แล้ว rejection-sampling → เลขฐาน K (ไม่มี modulo bias) · ไม่มี hash ให้ต้องเชื่อ · ไม่มีปุ่มสุ่มลูกเต๋าอัตโนมัติ
+  </div>
+  <div class="credit">© 2026 <b>Chollatis Bitcoiner</b>. &nbsp;|&nbsp; <span class="tv">Don't Trust, Verify.</span> &nbsp;·&nbsp; Powered by Claude AI</div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const UP="ABCDEFGHIJKLMNOPQRSTUVWXYZ",LO="abcdefghijklmnopqrstuvwxyz",DG="0123456789";
+const RANKS=['A','2','3','4','5','6','7','8','9','T','J','Q','K'],SUITS=['C','D','H','S'];
+let last=null, saltOn=false;
+const log2=x=>Math.log(x)/Math.LN2;
+function crc32(str){const b=new TextEncoder().encode(str);let c=~0;
+  for(let i=0;i<b.length;i++){c^=b[i];for(let j=0;j<8;j++)c=(c>>>1)^(0xEDB88320&-(c&1));}
+  return ((~c)>>>0).toString(16).toUpperCase().padStart(8,'0');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+
+const AMBIG_UP="OI", AMBIG_LO="lo", AMBIG_DG="01";        // 0/O/o and 1/l/I look-alikes
+const SYM_BLOCK="|'\"`\\/,.;:<>~(){}[]";                   // confusing / delimiter-prone symbols
+function alphabet(){
+  const u=$("unambig").checked;
+  let up=UP,lo=LO,dg=DG;
+  if(u){ up=[...UP].filter(c=>!AMBIG_UP.includes(c)).join('');
+         lo=[...LO].filter(c=>!AMBIG_LO.includes(c)).join('');
+         dg=[...DG].filter(c=>!AMBIG_DG.includes(c)).join(''); }
+  let a="";
+  if($("c_upper").checked)a+=up; if($("c_lower").checked)a+=lo; if($("c_digit").checked)a+=dg;
+  if($("c_sym").checked){const seen=new Set();for(const ch of $("symset").value){
+      if(ch===" "||(u&&SYM_BLOCK.includes(ch)))continue;
+      if(!seen.has(ch)){seen.add(ch);a+=ch;}}}
+  const seen=new Set();let out="";for(const ch of a){if(!seen.has(ch)){seen.add(ch);out+=ch;}}return out;
+}
+function src(){return document.querySelector('input[name=src]:checked').value;}
+function normFixed(v,mode){
+  if(mode==='coin')return v.replace(/[^01HTht\s]/g,'').replace(/h/g,'H').replace(/t/g,'T');
+  if(mode==='d6')  return v.replace(/[^1-6\s]/g,'');
+  return v.replace(/[^0-9A-Fa-f\s]/g,'').toUpperCase(); // d16
+}
+function normCards(v){
+  const s=v.toUpperCase().replace(/[^0-9ATJQKSHDC]/g,''),RANK1='A23456789TJQK',SUIT='SHDC';
+  const cards=[];let pend='',tail='',i=0;
+  while(i<s.length){const c=s[i],n=s[i+1];
+    if(pend===''){ if(c==='1'){if(n==='0'){pend='10';i+=2;}else if(i===s.length-1){tail='1';i++;}else i++;}
+      else if(RANK1.indexOf(c)>=0){pend=c;i++;} else i++; }
+    else{ if(SUIT.indexOf(c)>=0){cards.push(pend+c);pend='';i++;}
+      else if(c==='1'&&n==='0'){cards.push(pend);pend='10';i+=2;}
+      else if(RANK1.indexOf(c)>=0){cards.push(pend);pend=c;i++;} else i++; }
+  }
+  let out=cards.join(' ');if(pend)out+=(out?' ':'')+pend;if(tail)out+=(out?' ':'')+tail;return out;
+}
+let pasteTimer=null;
+function flashDrop(n,s){const h=$("pasteHint"),nm={coin:'COIN',d6:'D6',d16:'D16',cards:'CARDS'}[s]||s;
+  h.style.display='block';h.textContent='ℹ ตัดอักขระที่ไม่ตรงกับโหมด '+nm+' ออก '+n+' ตัว — ถ้า paste แล้วหาย ให้ตรวจว่าเลือก Source ถูกไหม';
+  clearTimeout(pasteTimer);pasteTimer=setTimeout(()=>{h.style.display='none';},5000);}
+function sanitizeEntropy(){
+  const ta=$("entropy"),s=src(),before=ta.value,start=ta.selectionStart;
+  const after=s==='cards'?normCards(before):normFixed(before,s);
+  if(after!==before){
+    const alnum=x=>(x.match(/[0-9A-Za-z]/g)||[]).length,dropped=alnum(before)-alnum(after);
+    let pos=s==='cards'?after.length:normFixed(before.slice(0,start),s).length;
+    ta.value=after;if(pos>after.length)pos=after.length;try{ta.setSelectionRange(pos,pos);}catch(e){}
+    if(dropped>=3)flashDrop(dropped,s);}
+  refresh();
+}
+
+// ---- parse physical entropy -> {steps:[{d,r}], bits, dup, inv} ----
+function cardIndex(tok){tok=tok.toUpperCase().replace('10','T');if(tok.length<2)return -1;
+  const s=tok.slice(-1),r=tok.slice(0,-1);const ri=RANKS.indexOf(r),si=SUITS.indexOf(s);
+  if(ri<0||si<0)return -1;return si*13+ri;}
+function parseEntropy(){
+  const s=src(),raw=$("entropy").value;const steps=[];let bits=0,dup=0,inv=0;
+  if(s==='coin'){for(const c of raw){if(c==='1'||c==='H'||c==='h'){steps.push({d:1,r:2});bits+=1;}
+    else if(c==='0'||c==='T'||c==='t'){steps.push({d:0,r:2});bits+=1;}}}
+  else if(s==='d6'){for(const c of raw){if(c>='1'&&c<='6'){steps.push({d:c.charCodeAt(0)-49,r:6});bits+=log2(6);}}}
+  else if(s==='d16'){for(const c of raw){let v=-1;if(c>='0'&&c<='9')v=c.charCodeAt(0)-48;
+    else{const u=c.toUpperCase();if(u>='A'&&u<='F')v=u.charCodeAt(0)-55;}
+    if(v>=0){steps.push({d:v,r:16});bits+=4;}}}
+  else{ // cards, draw w/o replacement, reshuffle when deck exhausted
+    let rem=[...Array(52).keys()],used=new Set();
+    for(const t of raw.split(/[\s,]+/).filter(Boolean)){
+      const ci=cardIndex(t);
+      if(ci<0){inv++;continue;}
+      if(used.has(ci)){dup++;continue;}
+      const pos=rem.indexOf(ci);steps.push({d:pos,r:rem.length});bits+=log2(rem.length);
+      rem.splice(pos,1);used.add(ci);
+      if(rem.length===0){rem=[...Array(52).keys()];used.clear();}
+    }
+  }
+  return {steps,bits,dup,inv};
+}
+function fold(steps){let E=0n,R=1n;for(const {d,r} of steps){E=E*BigInt(r)+BigInt(d);R=R*BigInt(r);}return {E,R};}
+
+// ---- system salt (CSPRNG), uniform in [0,R) via rejection ----
+function randBelow(R){const nb=R.toString(2).length,by=Math.ceil(nb/8);
+  for(let t=0;t<4096;t++){const a=new Uint8Array(by);crypto.getRandomValues(a);let x=0n;
+    for(const v of a)x=(x<<8n)|BigInt(v);x>>=BigInt(by*8-nb);if(x<R)return x;}
+  throw new Error('CSPRNG rejection cap exceeded');}
+
+function generate(steps,alpha,L){
+  const K=BigInt(alpha.length),KN=K**BigInt(L);const {E:Ephys,R}=fold(steps);
+  if(R<KN)return{ok:false,reason:'insufficient'};
+  const KNL=KN,limit=R-(R%KNL);
+  let E=Ephys,S=0n,tries=0;
+  if(saltOn){ do{S=randBelow(R);E=(Ephys+S)%R;tries++;}while(E>=limit&&tries<20000); }
+  if(E>=limit)return{ok:false,reason:'rejected'};
+  let U=E%KNL;const idx=[];
+  for(let i=L-1;i>=0;i--){const dv=K**BigInt(i);idx.push(Number(U/dv));U=U%dv;}
+  return{ok:true,pass:idx.map(x=>alpha[x]).join(''),idx,Ephys,S,E,R,KN,Uf:E%KNL};
+}
+function strength(b){if(b<50)return['CRITICAL','s-crit'];if(b<72)return['WEAK','s-weak'];
+  if(b<100)return['GOOD','s-good'];if(b<128)return['STRONG','s-strong'];return['MAXIMUM','s-max'];}
+
+function refresh(){
+  const alpha=alphabet(),K=alpha.length,L=parseInt($("len").value,10),s=src();
+  $("lenval").textContent=L;
+  const bpc=K>1?log2(K):0,target=L*bpc;
+  const uAm=$("unambig").checked;
+  $("symcnt").textContent=$("c_sym").checked?[...new Set([...$("symset").value].filter(c=>c!==" "&&!(uAm&&SYM_BLOCK.includes(c))))].length:0;
+  $("unambigHint").textContent=uAm?'ตัด 0 O o 1 l I + สัญลักษณ์กำกวม':'off';
+  $("rK").textContent=K;$("rBPC").textContent=bpc.toFixed(3);$("rTgt").innerHTML=target.toFixed(1)+' <small>bit</small>';
+  const [lab,cls]=strength(target);const st=$("rStr");st.textContent=lab;st.className='strength '+cls;
+
+  // source help / required draws
+  let help='',lbl='ROLLS ACCEPTED';
+  if(K<=1){help='เลือกอย่างน้อย 1 ชุดตัวอักษรก่อน';}
+  else if(s==='coin'){const n=Math.ceil(target/1);help=`ต้องการ ~<b style="color:var(--amber)">${n}</b> ครั้ง (แนะนำ ${n+12}) · เหรียญให้ 1 bit/ครั้ง`;lbl='FLIPS ACCEPTED';}
+  else if(s==='d6'){const n=Math.ceil(target/log2(6));help=`ต้องการ ~<b style="color:var(--amber)">${n}</b> ครั้ง (แนะนำ ${n+6}) · D6 ให้ 2.585 bit/ครั้ง`;lbl='ROLLS ACCEPTED';}
+  else if(s==='d16'){const n=Math.ceil(target/4);help=`ต้องการ ~<b style="color:var(--amber)">${n}</b> ครั้ง (แนะนำ ${n+4}) · D16 ให้ 4 bit/ครั้ง`;lbl='ROLLS ACCEPTED';}
+  else{let acc=0,n=0;while(acc<target){acc+=log2(52-(n%52));n++;}help=`ต้องการ ~<b style="color:var(--amber)">${n}</b> ใบ (แนะนำ ${n+2}) · ใบแรก 5.70 bit แล้วลดลง · ครบ 52 ให้สับใหม่จั่วต่อ`;lbl='CARDS DRAWN';}
+  $("srcHelp").innerHTML=help;$("rRollsK").textContent=lbl;
+
+  // placeholders
+  $("entropy").placeholder = s==='coin'?"ผลเหรียญ: 0/1 หรือ H/T  เช่น  0110 1001 1100 ..."
+    : s==='d6'?"ผล D6: ตัวเลข 1–6  เช่น  4 2 6 1 5 3 ..."
+    : s==='d16'?"ผล D16: 0–9 และ A–F  เช่น  A3 F0 7C 9B ..."
+    : "ผลไพ่: พิมพ์ติดกันได้ ระบบเว้นวรรคให้อัตโนมัติ · เช่น  askh10d7c → AS KH 10D 7C  (ดอก S/H/D/C)";
+
+  // pool
+  const p=parseEntropy();$("rRolls").textContent=p.steps.length;
+  $("rBits").innerHTML=p.bits.toFixed(1)+' <small>bit</small>';
+  const pct=target>0?Math.min(100,p.bits/target*100):0;
+  const bar=$("poolBar");bar.style.width=pct.toFixed(1)+'%';
+  $("poolTxt").textContent=p.bits.toFixed(0)+' / '+target.toFixed(0)+' bit  ('+pct.toFixed(0)+'%)';
+  let enough=false;
+  if(K>1&&p.steps.length>0){const {R}=fold(p.steps);enough=R>=(BigInt(K)**BigInt(L));}
+  bar.classList.toggle('ok',enough);
+  $("rPool").textContent=enough?'READY':'FILLING';$("rPool").style.color=enough?'var(--green)':'var(--amber)';
+  $("gen").disabled=!enough;
+
+  // warnings
+  const vw=$("varWarn");let w='';
+  if(s==='cards'){if(p.dup||p.inv)w='⚠ '+(p.dup?p.dup+' ใบซ้ำ ':'')+(p.inv?p.inv+' โทเคนไม่ถูกต้อง ':'')+'(ถูกข้าม)';}
+  else{const uq=new Set(p.steps.map(x=>x.d)).size,B=s==='coin'?2:s==='d6'?6:16;
+    if(p.steps.length>=8&&uq<=Math.max(1,Math.floor(B/3)))w='⚠ ความหลากหลายต่ำ ('+uq+'/'+B+') — ตรวจว่าสุ่มยุติธรรม ไม่ได้พิมพ์ค่าซ้ำ';}
+  if(w){vw.style.display='block';vw.textContent=w;}else vw.style.display='none';
+}
+
+function classFlags(p){const f=[['A-Z',/[A-Z]/.test(p)],['a-z',/[a-z]/.test(p)],['0-9',/[0-9]/.test(p)],['SYM',/[^A-Za-z0-9]/.test(p)]];
+  $("flags").innerHTML=f.map(([n,on])=>`<span class="cf ${on?'on':''}">${on?'✓':'·'} ${n}</span>`).join('');}
+
+$("saltBtn").addEventListener('click',()=>{
+  saltOn=!saltOn;const b=$("saltBtn");b.classList.toggle('on',saltOn);
+  b.textContent=(saltOn?'✦ SYSTEM ENTROPY (SALT): ON':'✦ MIX SYSTEM ENTROPY (SALT)');
+  $("saltState").innerHTML=saltOn?'<b>ON</b> — ผสม CSPRNG · ผลไม่ deterministic (verify ซ้ำไม่ได้ โดยตั้งใจ)':'<b>OFF</b> — deterministic จากผลสุ่มกายภาพล้วน (verify ได้)';
+});
+
+$("gen").addEventListener('click',()=>{
+  const alpha=alphabet(),L=parseInt($("len").value,10),p=parseEntropy();
+  const gm=$("genMsg");gm.style.display='block';let r;
+  try{r=generate(p.steps,alpha,L);}catch(e){gm.className='msg err';gm.textContent='ระบบสุ่ม (SALT/CSPRNG) ผิดปกติ — ปิด SALT แล้วลองใหม่';return;}
+  if(!r.ok){gm.className='msg '+(r.reason==='rejected'?'warn':'err');
+    gm.innerHTML=r.reason==='rejected'?'↻ REJECTION — สุ่มเพิ่มอีก 2–3 ครั้งแล้วกดใหม่':'entropy ไม่พอ — เติมผลสุ่มก่อน';return;}
+  gm.className='msg ok';gm.innerHTML='✓ GENERATED — '+(L*log2(alpha.length)).toFixed(1)+' bit'+(saltOn?' · SALTED':'');
+  last=r;last.raw=$("entropy").value;last.srcT=src();last.saltUsed=saltOn;last.K=alpha.length;last.L=L;last.uAmb=$("unambig").checked;
+  const o=$("out");o.textContent=r.pass;o.classList.remove('hidden');classFlags(r.pass);
+  $("verifyBox").style.display='block';
+  $("vMode").textContent=saltOn?'SALTED (non-deterministic)':'DETERMINISTIC';
+  $("vEnt").textContent=(L*log2(alpha.length)).toFixed(2)+' bit';
+  $("vSrc").textContent=src();$("vN").textContent=p.steps.length;
+  $("vK").textContent=alpha.length;$("vL").textContent=L;
+  $("vR").textContent=r.R.toString();$("vKN").textContent=r.KN.toString();
+  $("vE").textContent=r.Ephys.toString();
+  $("vS").textContent=saltOn?r.S.toString():'— (salt off)';
+  $("vEf").textContent=r.E.toString();$("vU").textContent=r.Uf.toString();
+  const tb=$("mapBody");tb.innerHTML='';
+  r.idx.forEach((d,i)=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${d}</td><td><span class="ch">${esc(alpha[d])}</span></td>`;
+    tb.appendChild(tr);});
+});
+
+$("mask").addEventListener('click',()=>$("out").classList.toggle('hidden'));
+function legacyCopy(text){const ta=document.createElement('textarea');ta.value=text;
+  document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);}
+$("copy").addEventListener('click',()=>{if(!last)return;const t=last.pass;
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).catch(()=>legacyCopy(t));}else legacyCopy(t);
+  const b=$("copy"),o=b.textContent;b.textContent='✓ COPIED';setTimeout(()=>b.textContent=o,1200);});
+$("wipe").addEventListener('click',()=>{$("entropy").value='';last=null;const o=$("out");o.textContent='';o.classList.add('hidden');
+  $("flags").innerHTML='';$("verifyBox").style.display='none';$("mapBody").innerHTML='';$("genMsg").style.display='none';
+  $("cardWrap").style.display='none';$("card").innerHTML='';
+  last=null;refresh();
+  const b=$("wipe"),t=b.textContent;b.textContent='✓ WIPED';setTimeout(()=>b.textContent=t,1200);});
+
+$("unambig").addEventListener('change',refresh);
+['c_upper','c_lower','c_digit','c_sym','symset','len'].forEach(id=>$(id).addEventListener('input',refresh));
+$("entropy").addEventListener('input',sanitizeEntropy);
+document.querySelectorAll('input[name=src]').forEach(r=>r.addEventListener('change',()=>{$("entropy").value='';refresh();}));
+function crcGroups(pass){let h='';for(let i=0;i<pass.length;i+=5){
+  const g=esc(pass.slice(i,i+5));
+  h+='<b><i>'+String(Math.floor(i/5)+1).padStart(2,'0')+'</i>'+g+'</b>';}return h;}
+function buildCard(){
+  if(!last){return;}
+  const pass=last.pass,pcs=crc32(pass);
+  const rawNorm=(last.raw||'').replace(/\s+/g,' ').trim();
+  const salted=last.saltUsed,rcs=salted?'— (salted)':crc32(rawNorm);
+  const srcName={coin:'COIN',d6:'D6',d16:'D16',cards:'CARDS'}[last.srcT]||last.srcT;
+  const cfg=[last.uAmb?'UNAMBIGUOUS':'',('K='+last.K),('L='+last.L),((last.L*log2(last.K)).toFixed(0)+' bit')].filter(Boolean).join(' · ');
+  let rollsBlock='';
+  if(rawNorm)rollsBlock=`<div class="sec"><div class="lbl">ENTROPY INPUT — ${srcName} · ${salted?'SALTED (สร้างซ้ำไม่ได้)':'DETERMINISTIC (สร้างซ้ำได้)'}</div>
+    <div class="rolls">${esc(rawNorm)}</div>
+    <div class="lbl" style="margin-top:5px">Rolls checksum (CRC32): <span class="crc">${rcs}</span></div></div>`;
+  $("card").innerHTML=`<h2>⬡ PASSPHRASE BACKUP CARD</h2>
+    <div class="meta">${cfg} · Source: ${srcName}</div>
+    <div class="lines">Label:<span></span>Date:<span></span></div>
+    <div class="lines">Stored&nbsp;at:<span style="min-width:280px"></span></div>
+    <div class="sec"><div class="lbl">PASSPHRASE — จัดกลุ่มละ 5 ตัว (เลขกำกับลำดับกลุ่ม)</div>
+      <div class="grp">${crcGroups(pass)}</div>
+      <div class="pass">${esc(pass)}</div>
+      <div class="lbl">Passphrase checksum (CRC32): <span class="crc">${pcs}</span></div></div>
+    ${rollsBlock}
+    <div class="warn">⚠ บัตรนี้มีความลับ — เก็บเหมือนเงินสด/ทองคำ · ${salted?'โหมด SALTED: ผลสุ่มไม่สร้าง passphrase ซ้ำ ให้สำรอง <b>ตัว passphrase</b> เป็นหลัก':'โหมด DETERMINISTIC: รันเครื่องนี้ด้วยผลสุ่ม + ตั้งค่าเดิม จะได้ passphrase เดิม (Don\u2019t Trust, Verify)'} · หลังคัดลอกด้วยมือ ให้พิมพ์กลับเข้าเครื่องแล้วเทียบ CRC32 ให้ตรงทุกครั้ง</div>`;
+  $("cardWrap").style.display='block';
+  $("cardWrap").scrollIntoView({behavior:'smooth',block:'start'});
+}
+$("cardBtn").addEventListener('click',buildCard);
+$("printBtn").addEventListener('click',()=>{
+  if(!last)return;
+  const cw=$("cardWrap"),p=cw.parentNode,n=cw.nextSibling,oldTitle=document.title;let done=false;
+  const pad=x=>String(x).padStart(2,'0'),d=new Date();
+  const stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+  document.title='Passphrase-Backup_'+stamp;
+  const restore=()=>{if(done)return;done=true;document.title=oldTitle;if(n)p.insertBefore(cw,n);else p.appendChild(cw);document.body.classList.remove('printing');};
+  document.body.classList.add('printing');document.body.appendChild(cw);
+  window.addEventListener('afterprint',restore,{once:true});
+  window.print();setTimeout(restore,1500);
+});
+$("cardClose").addEventListener('click',()=>{$("cardWrap").style.display='none';});
+$("themeBtn").addEventListener('click',()=>{const light=document.body.classList.toggle('light');
+  $("themeBtn").textContent=light?'☾ DARK':'☀ LIGHT';});
+function net(){const on=navigator.onLine,dot=$("netdot"),txt=$("netTxt"),pill=$("netPill");
+  dot.classList.toggle('red',on);pill.classList.toggle('warn',on);pill.classList.toggle('ok',!on);
+  txt.textContent=on?'AIRGAP NOT READY / เครื่องนี้กำลังเชื่อมต่อเครือข่าย':'AIRGAP READY / ออฟไลน์ พร้อมใช้งาน';}
+window.addEventListener('online',net);window.addEventListener('offline',net);net();refresh();
+</script>
+</body>
+</html>
