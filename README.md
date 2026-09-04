@@ -26,7 +26,7 @@
 
 ```
 SHA-256 (passphrase-forge.html):
-C2A4DCEB6B5BA84A81E7F1AA22C40D08006ADFC92D0CE3A8B69DA7127EA8B9F8
+98A17311F2052451296A4163FDE5F8CB3F5AE0E01517B990E081DC56EE674907
 ```
 
 | OS | Command / คำสั่ง |
@@ -55,8 +55,9 @@ It is built for generating and backing up **high-value, long-lived secrets** —
 | Feature | Detail |
 |---|---|
 | **Entropy sources** | Coin (1 bit) · D6 (2.585 bit) · D16 (4 bit) · 52-card deck (~5.70 bit, decreasing) |
-| **Output** | A–Z / a–z / 0–9 / editable symbols · length slider **12–50** |
-| **Unambiguous mode** | Removes look-alikes `0 O o 1 l I` + confusing symbols for hand-copying |
+| **Output** | A–Z / a–z / 0–9 / editable symbols · length slider **12–64** · security floor 80–256 bit with auto-length |
+| **Ambiguity filter** | **4 nested levels** (L3 ⊂ L2 ⊂ L1 ⊂ L0). L0 full (K=77) · L1 drops `0 O o 1 l I` (K=71) · L2 also drops `8/B 6/G/b 5/S/s 2/Z/z 9/g/q` (K=60) · L3 uppercase+digits only, no case, no symbols (K=27). Smaller K = fewer bits/char, so the tool raises the required length to hold the same total entropy |
+| **Simulate rolls** | Optional `SIMULATE ROLLS (CSPRNG)` button fills the entropy pool from `crypto.getRandomValues` using the same unbiased rejection sampling. **Test / low-stakes only** — the result is flagged SIMULATED in the status line, the verify panel (`entropy origin`) and the printed backup card. Never use it for a wallet seed |
 | **System salt (optional)** | Mixes a CSPRNG value so output isn't deterministic from dice alone |
 | **Backup card** | Printable, grouped passphrase + **CRC32** typo-check + timestamped filename |
 | **Verify panel** | Shows `E`, `R`, `K^L`, rejection limit, and a per-character base-K map |
@@ -97,9 +98,9 @@ The security is **mathematical**, and every intermediate value is displayed so y
 
 **Prerequisites:** a browser (Tor Browser or any modern browser). For real secrets, use an air-gapped machine (Tails OS recommended).
 
-1. **Get offline.** Copy `passphrase-forge.html` to a USB / Tails persistent storage. Open it via `file://`. On Tor Browser, allow JavaScript for this local page. **Disconnect the network** (or use Tails offline mode). The header light should read **AIRGAP READY** (green).
+1. **Get offline.** Copy `passphrase-forge.html` to a USB / Tails persistent storage. Open it via `file://`. On Tor Browser, allow JavaScript for this local page. **Disconnect the network** (or use Tails offline mode). Note that `navigator.onLine` is not a reliable airgap indicator — on Tails / Tor Browser it stays `true` even with the network pulled, so the header reports **LINK STATE UNVERIFIED** rather than claiming you are online. The real barrier is the CSP `connect-src 'none'`: press **TEST EGRESS** in the header to prove it, and look for **EGRESS BLOCKED (verified)**.
 
-2. **`[01] Output spec.** Tick the character classes you want (A–Z / a–z / 0–9 / symbols) and edit the symbol set if desired. Slide **Length** (12–50). Enable **Unambiguous** if the passphrase will be hand-written. The panel shows `K`, bits/char, target entropy, and a strength rating.
+2. **`[01] Output spec.** Tick the character classes you want (A–Z / a–z / 0–9 / symbols) and edit the symbol set if desired. Pick an **Ambiguity filter** level (L0–L3) — L2 for hand-copying, L3 for handwriting, OCR or metal stamping. Set a **Security floor** (80–256 bit); with **Auto-length** on, `L = ceil(floor / log2 K)` is applied automatically whenever `K` changes. Moving the slider by hand turns Auto-length off and shows how many characters you are short. The panel shows `K`, bits/char, min length at the floor, target entropy, and a strength rating.
 
 3. **`[02] Source.** Choose Coin, D6, D16, or Cards. The help line tells you how many rolls you need (with a small recommended buffer so rejection ≈ 0).
 
@@ -147,7 +148,8 @@ The security is **mathematical**, and every intermediate value is displayed so y
 |---|---|
 | **แหล่ง Entropy** | เหรียญ (1 bit) · D6 (2.585 bit) · D16 (4 bit) · ไพ่ 52 ใบ (~5.70 bit ลดลงเรื่อย ๆ) |
 | **ผลลัพธ์** | A–Z / a–z / 0–9 / สัญลักษณ์ (แก้ได้) · แถบเลื่อนความยาว **12–50** |
-| **โหมด Unambiguous** | ตัดอักขระหน้าตาคล้ายกัน `0 O o 1 l I` + สัญลักษณ์กำกวม เพื่อคัดลอกด้วยมือไม่ผิด |
+| **Ambiguity filter** | **4 ระดับซ้อนกัน** (L3 ⊂ L2 ⊂ L1 ⊂ L0) · L0 ครบ (K=77) · L1 ตัด `0 O o 1 l I` (K=71) · L2 ตัดเพิ่ม `8/B 6/G/b 5/S/s 2/Z/z 9/g/q` (K=60) · L3 เหลือพิมพ์ใหญ่+เลข ไม่มีเคส/สัญลักษณ์ (K=27) · ยิ่งตัดมาก bit/ตัวยิ่งน้อย เครื่องจะเพิ่มความยาวที่ต้องใช้ให้เอง |
+| **Simulate rolls** | ปุ่ม `SIMULATE ROLLS (CSPRNG)` เติม entropy ให้อัตโนมัติจาก `crypto.getRandomValues` ด้วย rejection sampling แบบเดียวกับ path หลัก · **สำหรับทดสอบ/รหัสไม่ซีเรียสเท่านั้น** ผลจะถูกติดธง SIMULATED ทั้งในแถบสถานะ แผง verify (`entropy origin`) และบัตร backup ที่พิมพ์ออกมา · ห้ามใช้กับ seed จริง |
 | **System salt (เลือกได้)** | ผสมค่าจาก CSPRNG เพื่อให้ผลไม่ deterministic จากลูกเต๋าอย่างเดียว |
 | **Backup card** | พิมพ์ได้ · passphrase จัดกลุ่ม + **CRC32** กันจดผิด + ชื่อไฟล์มีวันที่-เวลา |
 | **Verify panel** | แสดง `E`, `R`, `K^L`, ขอบเขต rejection และตารางแปลงตัวอักษรฐาน K |
@@ -188,9 +190,9 @@ The security is **mathematical**, and every intermediate value is displayed so y
 
 **เตรียมพร้อม:** เบราว์เซอร์ (Tor Browser หรือรุ่นใหม่ใดก็ได้) · สำหรับความลับจริง ให้ใช้เครื่อง air-gapped (แนะนำ Tails OS)
 
-1. **ออฟไลน์ก่อน.** คัดลอก `passphrase-forge.html` ลง USB / Tails persistent → เปิดผ่าน `file://` (บน Tor Browser อนุญาต JavaScript หน้านี้) → **ตัดการเชื่อมต่อเครือข่าย** (หรือใช้ Tails offline mode) · ไฟบนหัวควรขึ้น **AIRGAP READY** (เขียว)
+1. **ออฟไลน์ก่อน.** คัดลอก `passphrase-forge.html` ลง USB / Tails persistent → เปิดผ่าน `file://` (บน Tor Browser อนุญาต JavaScript หน้านี้) → **ตัดการเชื่อมต่อเครือข่าย** (หรือใช้ Tails offline mode) · หมายเหตุ: `navigator.onLine` ใช้ยืนยัน airgap ไม่ได้ — บน Tails/Tor Browser ค่านี้เป็น `true` เสมอแม้ถอดสายแล้ว หัวหน้าจอจึงขึ้น **LINK STATE UNVERIFIED** แทนที่จะกล่าวหาว่าคุณต่อเน็ตอยู่ · ด่านจริงคือ CSP `connect-src 'none'` → กด **TEST EGRESS** บนหัว แล้วดูว่าขึ้น **EGRESS BLOCKED (verified)**
 
-2. **`[01] Output spec.** ติ๊กชุดตัวอักษรที่ต้องการ (A–Z / a–z / 0–9 / สัญลักษณ์) แก้ชุดสัญลักษณ์ได้ · เลื่อน **Length** (12–50) · เปิด **Unambiguous** ถ้าจะเขียนด้วยมือ · แผงจะบอก `K`, bit/ตัว, target entropy และระดับความแข็งแรง
+2. **`[01] Output spec.** ติ๊กชุดตัวอักษรที่ต้องการ (A–Z / a–z / 0–9 / สัญลักษณ์) แก้ชุดสัญลักษณ์ได้ · เลือก **Ambiguity filter** L0–L3 (L2 สำหรับคัดลอกด้วยมือ · L3 สำหรับลายมือ/OCR/สลักโลหะ) · ตั้ง **Security floor** (80–256 bit) เปิด **Auto-length** เครื่องจะตั้ง `L = ceil(floor ÷ log2 K)` ให้อัตโนมัติทุกครั้งที่ `K` เปลี่ยน · ถ้าลากสไลเดอร์เอง auto จะปิดและเตือนว่าขาดอีกกี่ตัว · แผงจะบอก `K`, bit/ตัว, ความยาวขั้นต่ำ, target entropy และระดับความแข็งแรง
 
 3. **`[02] Source.** เลือก Coin / D6 / D16 / Cards · บรรทัดช่วยเหลือจะบอกว่าต้องสุ่มกี่ครั้ง (พร้อม buffer เล็กน้อยให้ rejection ≈ 0)
 
@@ -220,7 +222,13 @@ The security is **mathematical**, and every intermediate value is displayed so y
 - **passphrase คือความลับ** · ใครมีมัน (+ mnemonic ที่รู้) คุมเงินได้ · เก็บบัตรสำรองเหมือนเงินสด/ทองคำ
 - **ทดสอบก่อนใส่เงินจริง** · สร้างตัวทิ้งแล้ว verify ครบวงจร `seed + passphrase → address` แบบ **offline** ก่อน
 - **SALT ปิด** = ผลสุ่ม+ตั้งค่าเดิมสร้าง passphrase ซ้ำได้ · **SALT เปิด** = สร้างซ้ำไม่ได้ ให้สำรองตัว passphrase เอง
-- ให้ **ตามสภาพ ไม่มีการรับประกันใด ๆ** · รับผิดชอบกุญแจและเงินของตนเอง
+- ให้ **ตามสภาพ ไม่มีการรับประกันใด ๆ** · พี่รับผิดชอบกุญแจและเงินของตนเอง
+
+---
+
+## 📄 License
+
+Released under the **MIT License**. See [`LICENSE`](LICENSE).
 
 ---
 
