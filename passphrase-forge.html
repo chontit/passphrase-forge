@@ -32,8 +32,10 @@
   .pill{border:1px solid var(--line);padding:3px 9px;font-size:10.5px;letter-spacing:1px;color:var(--muted);display:inline-flex;gap:6px;align-items:center;background:var(--ink)}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
   .dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
+  .dot.amb{background:var(--amber);box-shadow:0 0 8px var(--amber)}
   .pill.ok{color:var(--green);border-color:var(--green)}
   .pill.warn{color:var(--red);border-color:var(--red);background:#1a0a0d}
+  .pill.caution{color:#ffae42;border-color:#ffae42}
   .stage{border:1px solid var(--line);background:var(--panel);margin-top:14px;position:relative}
   .stage>.hd{display:flex;align-items:baseline;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--panel2)}
   .stage>.hd .num{color:var(--ink);background:var(--amber);font-weight:700;padding:0 7px;font-size:12px;letter-spacing:1px}
@@ -46,6 +48,15 @@
   @media(max-width:640px){.grid4{grid-template-columns:repeat(2,1fr)}}
   input[type=checkbox],input[type=radio]{accent-color:var(--amber);width:15px;height:15px}
   .opt .cnt{margin-left:auto;color:var(--muted);font-size:11px}
+  label.opt.off{opacity:.38;cursor:not-allowed}
+  label.opt.sel{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber-dim)}
+  .lvl{font-size:11px;letter-spacing:1px}
+  .lvl .cnt{font-size:10px}
+  select{background:var(--ink);border:1px solid var(--line);color:var(--txt);font-family:inherit;font-size:13px;padding:8px 10px;outline:none}
+  select:focus{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-dim)}
+  .readout.r5{grid-template-columns:repeat(5,1fr)}
+  @media(max-width:640px){.readout.r5{grid-template-columns:repeat(2,1fr)}}
+  .cutlist{color:var(--red);word-break:break-all;letter-spacing:1px}
   .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
   .fld{display:flex;flex-direction:column;gap:5px}
   .fld small{color:var(--muted);letter-spacing:1px;font-size:10.5px}
@@ -80,6 +91,8 @@
   .btn.fire{width:100%;font-size:15px;padding:14px}
   .btn.wipe{border-color:var(--red);color:var(--red)}.btn.wipe:hover{background:var(--red);color:var(--ink);box-shadow:0 0 18px rgba(255,77,94,.5)}
   .btn.ghost{border-color:var(--line);color:var(--muted)}.btn.ghost:hover{background:var(--panel2);color:var(--txt);box-shadow:none}
+  .btn.sim{border-color:var(--cyan);color:var(--cyan)}
+  .btn.sim:hover:not(:disabled){background:var(--cyan);color:var(--ink);box-shadow:0 0 18px rgba(56,232,255,.45)}
   .btn.salt{border-color:var(--violet);color:var(--violet)}
   .btn.salt.on{background:var(--violet);color:var(--ink);box-shadow:0 0 16px rgba(185,139,255,.55)}
   .saltrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
@@ -141,10 +154,12 @@
     <div class="sub">ENTROPY-TO-KEY GENERATOR // สร้างรหัสผ่านความปลอดภัยสูงจาก entropy กายภาพ (เหรียญ/ลูกเต๋า/ไพ่)</div>
     <div class="netbar">
       <button class="pill netbtn" id="themeBtn" title="สลับธีมเข้ม/สว่าง">☀ LIGHT</button>
-      <span class="pill" id="netPill" title="สถานะจาก navigator.onLine ของ OS/เบราว์เซอร์ · การกันส่งข้อมูลออกจริงบังคับด้วย CSP connect-src 'none'"><span class="dot" id="netdot"></span> <span id="netTxt">CHECKING…</span></span>
-      <span class="pill">CSP: connect-src 'none'</span>
+      <span class="pill" id="netPill" title="navigator.onLine บอกได้แค่ว่าเครื่องมี network interface ที่ทำงานอยู่ ไม่ได้บอกว่ามีการส่งข้อมูลออกจริง"><span class="dot" id="netdot"></span> <span id="netTxt">CHECKING…</span></span>
+      <button class="pill netbtn" id="cspBtn" title="ยิงคำขอไปยังโดเมน .invalid (RFC 2606 — ไม่มีอยู่จริง) แล้วดูว่า CSP บล็อกไหม">⛨ TEST EGRESS / ทดสอบการส่งออก</button>
+      <span class="pill" id="cspPill">CSP: connect-src 'none' — ยังไม่ทดสอบ</span>
       <span class="pill">TAILS / TOR · file://</span>
     </div>
+    <div class="sub" id="netNote" style="margin-top:8px"></div>
   </header>
 
   <!-- STAGE 1 -->
@@ -155,7 +170,7 @@
         <label class="opt"><input type="checkbox" id="c_upper" checked> A–Z <span class="cnt">26</span></label>
         <label class="opt"><input type="checkbox" id="c_lower" checked> a–z <span class="cnt">26</span></label>
         <label class="opt"><input type="checkbox" id="c_digit" checked> 0–9 <span class="cnt">10</span></label>
-        <label class="opt"><input type="checkbox" id="c_sym" checked> SYMBOL <span class="cnt" id="symcnt">16</span></label>
+        <label class="opt"><input type="checkbox" id="c_sym" checked> SYMBOL <span class="cnt" id="symcnt">15</span></label>
       </div>
       <div class="row">
         <div class="fld" style="flex:1">
@@ -163,23 +178,47 @@
           <input type="text" id="symset" spellcheck="false" autocomplete="off" value="!@#$%^&amp;*()-_=+?">
         </div>
       </div>
-      <label class="opt" style="margin-top:12px">
-        <input type="checkbox" id="unambig"> UNAMBIGUOUS / ตัดอักขระที่สับสน
-        <span class="cnt" id="unambigHint">off</span>
-      </label>
+      <div class="fld" style="margin-top:14px">
+        <small>AMBIGUITY FILTER / ระดับการตัดอักขระกำกวม</small>
+        <div class="grid4" style="margin-top:5px">
+          <label class="opt lvl" id="ambL0"><input type="radio" name="amb" value="0" checked> L0 OFF <span class="cnt">ครบ</span></label>
+          <label class="opt lvl" id="ambL1"><input type="radio" name="amb" value="1"> L1 BASIC <span class="cnt">0O1lI</span></label>
+          <label class="opt lvl" id="ambL2"><input type="radio" name="amb" value="2"> L2 STRICT <span class="cnt">+BGSZ</span></label>
+          <label class="opt lvl" id="ambL3"><input type="radio" name="amb" value="3"> L3 MAX <span class="cnt">A–Z 2–9</span></label>
+        </div>
+        <div class="msg" id="ambInfo"></div>
+      </div>
+      <div class="row">
+        <div class="fld">
+          <small>SECURITY FLOOR / เป้าหมายบิตขั้นต่ำ</small>
+          <select id="floor">
+            <option value="80">80 bit — ขั้นต่ำ</option>
+            <option value="100">100 bit — ดี</option>
+            <option value="128" selected>128 bit — มาตรฐาน</option>
+            <option value="160">160 bit — สูง</option>
+            <option value="192">192 bit — สูงมาก</option>
+            <option value="256">256 bit — สูงสุด</option>
+          </select>
+        </div>
+        <label class="opt" style="flex:1;min-width:230px">
+          <input type="checkbox" id="autolen" checked> AUTO-LENGTH / ปรับความยาวให้ถึงเป้าอัตโนมัติ
+        </label>
+      </div>
       <div class="fld" style="margin-top:12px">
-        <small>LENGTH / ความยาว (12–50)</small>
+        <small>LENGTH / ความยาว (12–64)</small>
         <div class="slidewrap">
-          <input type="range" id="len" min="12" max="50" value="24" step="1">
+          <input type="range" id="len" min="12" max="64" value="24" step="1">
           <div class="lenbig"><span id="lenval">24</span><small> ch</small></div>
         </div>
       </div>
-      <div class="readout">
+      <div class="readout r5">
         <div class="cell"><div class="k">ALPHABET K</div><div class="v" id="rK">–</div></div>
         <div class="cell"><div class="k">BITS / CHAR</div><div class="v" id="rBPC">–</div></div>
+        <div class="cell"><div class="k">MIN LEN @ FLOOR</div><div class="v" id="rMin">– <small>ch</small></div></div>
         <div class="cell"><div class="k">TARGET ENTROPY</div><div class="v" id="rTgt">– <small>bit</small></div></div>
         <div class="cell"><div class="k">STRENGTH</div><div class="v"><span id="rStr" class="strength s-good">–</span></div></div>
       </div>
+      <div class="msg" id="lenWarn" style="display:none"></div>
     </div>
   </section>
 
@@ -201,6 +240,11 @@
   <section class="stage">
     <div class="hd"><span class="num">03</span><span class="t">ENTROPY INPUT</span><span class="th">ป้อนผลการสุ่ม</span></div>
     <div class="body">
+      <div class="saltrow">
+        <button class="btn sim" id="simBtn">🎲 SIMULATE ROLLS (CSPRNG) / สุ่มให้อัตโนมัติ</button>
+        <span class="saltstate" id="simState">โหมดปกติ — ป้อนผลสุ่มกายภาพเอง (ceremony)</span>
+      </div>
+      <div class="msg warn" id="simWarn" style="display:none"></div>
       <textarea id="entropy" spellcheck="false" autocomplete="off" placeholder=""></textarea>
       <div class="gauge"><i id="poolBar"></i><span id="poolTxt">0 / 0 bit</span></div>
       <div class="readout" style="grid-template-columns:repeat(3,1fr)">
@@ -230,7 +274,7 @@
   <section class="stage">
     <div class="hd"><span class="num">05</span><span class="t">OUTPUT</span><span class="th">ผลลัพธ์ & การตรวจสอบ</span></div>
     <div class="body">
-      <div class="out hidden" id="out"></div>
+      <div class="out" id="out"></div>
       <div class="classflags" id="flags"></div>
       <div class="row" style="margin-top:10px">
         <button class="btn ghost" id="mask">👁 SHOW / HIDE</button>
@@ -242,10 +286,12 @@
         <summary>▸ VERIFY DERIVATION / ตรวจสอบการคำนวณด้วยตนเอง (Don't Trust, Verify)</summary>
         <div class="verify">
           <div class="kv">
+            <b>entropy origin</b><code id="vOrig"></code>
             <b>mode</b><code id="vMode"></code>
             <b>delivered entropy</b><code id="vEnt"></code>
             <b>source</b><code id="vSrc"></code>
             <b>draws used (n)</b><code id="vN"></code>
+            <b>ambiguity filter</b><code id="vAmb"></code>
             <b>alphabet size (K)</b><code id="vK"></code>
             <b>length (L)</b><code id="vL"></code>
             <b>R = Πradix</b><code id="vR"></code>
@@ -274,9 +320,10 @@
 
   <div class="foot">
     <b>วิธีใช้บน Tails/Tor:</b> คัดลอกไฟล์ลง USB persistent → เปิดด้วย Tor Browser ผ่าน <code>file://</code> (อนุญาต JS หน้านี้) → ตัดเน็ตได้เลย<br>
-    <b>ขั้นตอน:</b> [01] เลือก charset + เลื่อนความยาว → [02] เลือกแหล่ง → [03] สุ่มจริงแล้วป้อน จน POOL เต็ม → [04] (เลือก SALT ได้) GENERATE → [05] copy แล้ว WIPE<br>
+    <b>ขั้นตอน:</b> [01] เลือก charset + ระดับ AMBIGUITY + ความยาว → [02] เลือกแหล่ง → [03] สุ่มจริงแล้วป้อน จน POOL เต็ม → [04] (เลือก SALT ได้) GENERATE → [05] copy แล้ว WIPE<br>
     <b>รูปแบบป้อน:</b> COIN = 0/1 หรือ H/T · D6 = 1–6 · D16 = 0–9,A–F · CARDS = อันดับ+ดอก เช่น <code>AS KH 10D 7C QS</code> (ดอก S/H/D/C · ครบ 52 ใบให้สับใหม่แล้วจั่วต่อได้)<br>
     <b>SALT:</b> ผสม system entropy (CSPRNG) แบบ E' = (E<sub>ทอย</sub> + S) mod R — ทำให้<b>ไม่ deterministic</b> จากลูกเต๋าอย่างเดียว ป้องกันกรณีลูกเต๋าลำเอียง/คาดเดาได้ · แต่<b>ไม่ลด</b>ปริมาณ entropy กายภาพที่ต้องเก็บ (defense-in-depth) · ถ้าเปิด SALT ผลจะ verify ซ้ำไม่ได้โดยตั้งใจ<br>
+    <b>AMBIGUITY FILTER:</b> 4 ระดับซ้อนกัน (L3 ⊂ L2 ⊂ L1 ⊂ L0) — <b>L0</b> ครบทุกตัว · <b>L1</b> ตัด 0/O/o 1/l/I · <b>L2</b> ตัดเพิ่ม 8/B 6/G/b 5/S/s 2/Z/z 9/g/q · <b>L3</b> เหลือพิมพ์ใหญ่+เลข (ไม่มีเคสให้สับสน เหมาะกับลายมือ/สลักโลหะ) · ยิ่งตัดมาก <b>K</b> ยิ่งเล็ก → bit/ตัวลด → ต้องเพิ่มความยาว · เปิด <b>AUTO-LENGTH</b> ให้ตั้ง L = ceil(floor ÷ log2 K) อัตโนมัติ<br>
     <b>หลักการ:</b> รวมผลสุ่มเป็นจำนวนเต็มระบบ mixed-radix แล้ว rejection-sampling → เลขฐาน K (ไม่มี modulo bias) · ไม่มี hash ให้ต้องเชื่อ · ไม่มีปุ่มสุ่มลูกเต๋าอัตโนมัติ
   </div>
   <div class="credit">© 2026 <b>Chollatis Bitcoiner</b>. &nbsp;|&nbsp; <span class="tv">Don't Trust, Verify.</span> &nbsp;·&nbsp; Powered by Claude AI</div>
@@ -287,27 +334,56 @@
 const $=id=>document.getElementById(id);
 const UP="ABCDEFGHIJKLMNOPQRSTUVWXYZ",LO="abcdefghijklmnopqrstuvwxyz",DG="0123456789";
 const RANKS=['A','2','3','4','5','6','7','8','9','T','J','Q','K'],SUITS=['C','D','H','S'];
-let last=null, saltOn=false;
+let last=null, saltOn=false, simUsed=false;
 const log2=x=>Math.log(x)/Math.LN2;
 function crc32(str){const b=new TextEncoder().encode(str);let c=~0;
   for(let i=0;i<b.length;i++){c^=b[i];for(let j=0;j<8;j++)c=(c>>>1)^(0xEDB88320&-(c&1));}
   return ((~c)>>>0).toString(16).toUpperCase().padStart(8,'0');}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 
-const AMBIG_UP="OI", AMBIG_LO="lo", AMBIG_DG="01";        // 0/O/o and 1/l/I look-alikes
-const SYM_BLOCK="|'\"`\\/,.;:<>~(){}[]";                   // confusing / delimiter-prone symbols
+/* ---- AMBIGUITY LADDER --------------------------------------------------
+   แต่ละระดับเป็น subset ที่ซ้อนกันอย่างเคร่งครัด (L3 ⊂ L2 ⊂ L1 ⊂ L0)
+   ยิ่งตัดมาก K ยิ่งเล็ก → bit/ตัวลดลง → ต้องเพิ่มความยาวเพื่อรักษาบิตรวม   */
+const AMB=[
+  {tag:'L0 OFF',   th:'ไม่ตัด — ชุดเต็ม',
+   up:'',        lo:'',         dg:'',   sym:'',                        killLo:false,killSym:false},
+  {tag:'L1 BASIC', th:'ตัดคู่คลาสสิก 0/O/o · 1/l/I และสัญลักษณ์ที่พังตอน copy',
+   up:'OI',      lo:'lo',       dg:'01', sym:"|'\"`\\",                 killLo:false,killSym:false},
+  {tag:'L2 STRICT',th:'+ 8/B · 6/G/b · 5/S/s · 2/Z/z · 9/g/q และสัญลักษณ์คั่นคำ',
+   up:'OIBGSZ',  lo:'lobgqsz',  dg:'01', sym:"|'\"`\\,.;:/~(){}[]<>",   killLo:false,killSym:false},
+  {tag:'L3 MAX',   th:'ตัวพิมพ์ใหญ่ + เลข เท่านั้น (ไม่มีเคส/สัญลักษณ์) — สำหรับลายมือ/OCR/สลักโลหะ',
+   up:'OIBGSZU', lo:'',         dg:'01', sym:'',                        killLo:true, killSym:true}
+];
+const strip=(s,bad)=>[...s].filter(c=>!bad.includes(c)).join('');
+function ambLevel(){const r=document.querySelector('input[name=amb]:checked');return r?parseInt(r.value,10):0;}
+function symList(t){ // สัญลักษณ์ที่เหลือหลังกรอง (ASCII พิมพ์ได้เท่านั้น)
+  if(t.killSym)return '';
+  const seen=new Set();let o='';
+  for(const ch of $("symset").value){
+    const cc=ch.codePointAt(0);
+    if(cc<33||cc>126)continue;                 // ตัดช่องว่าง/นอก ASCII
+    if(t.sym.includes(ch))continue;
+    if(!seen.has(ch)){seen.add(ch);o+=ch;}}
+  return o;
+}
 function alphabet(){
-  const u=$("unambig").checked;
-  let up=UP,lo=LO,dg=DG;
-  if(u){ up=[...UP].filter(c=>!AMBIG_UP.includes(c)).join('');
-         lo=[...LO].filter(c=>!AMBIG_LO.includes(c)).join('');
-         dg=[...DG].filter(c=>!AMBIG_DG.includes(c)).join(''); }
+  const t=AMB[ambLevel()];
   let a="";
-  if($("c_upper").checked)a+=up; if($("c_lower").checked)a+=lo; if($("c_digit").checked)a+=dg;
-  if($("c_sym").checked){const seen=new Set();for(const ch of $("symset").value){
-      if(ch===" "||(u&&SYM_BLOCK.includes(ch)))continue;
-      if(!seen.has(ch)){seen.add(ch);a+=ch;}}}
+  if($("c_upper").checked)a+=strip(UP,t.up);
+  if($("c_lower").checked&&!t.killLo)a+=strip(LO,t.lo);
+  if($("c_digit").checked)a+=strip(DG,t.dg);
+  if($("c_sym").checked)a+=symList(t);
   const seen=new Set();let out="";for(const ch of a){if(!seen.has(ch)){seen.add(ch);out+=ch;}}return out;
+}
+function cutChars(){ // รายการที่ถูกตัดออกจริง สำหรับตรวจสอบด้วยตา (verify)
+  const t=AMB[ambLevel()],c=[];
+  if($("c_upper").checked)c.push(...t.up);
+  if($("c_lower").checked)c.push(...(t.killLo?LO:t.lo));
+  if($("c_digit").checked)c.push(...t.dg);
+  if($("c_sym").checked){for(const ch of $("symset").value){
+    const cc=ch.codePointAt(0);if(cc<33||cc>126)continue;
+    if(t.killSym||t.sym.includes(ch))c.push(ch);}}
+  return [...new Set(c)];
 }
 function src(){return document.querySelector('input[name=src]:checked').value;}
 function normFixed(v,mode){
@@ -333,10 +409,11 @@ function flashDrop(n,s){const h=$("pasteHint"),nm={coin:'COIN',d6:'D6',d16:'D16'
   clearTimeout(pasteTimer);pasteTimer=setTimeout(()=>{h.style.display='none';},5000);}
 function sanitizeEntropy(){
   const ta=$("entropy"),s=src(),before=ta.value,start=ta.selectionStart;
+  if(!before.trim()&&simUsed){simUsed=false;setSimState();}
   const after=s==='cards'?normCards(before):normFixed(before,s);
   if(after!==before){
     const alnum=x=>(x.match(/[0-9A-Za-z]/g)||[]).length,dropped=alnum(before)-alnum(after);
-    let pos=s==='cards'?after.length:normFixed(before.slice(0,start),s).length;
+    let pos=s==='cards'?normCards(before.slice(0,start)).length:normFixed(before.slice(0,start),s).length;
     ta.value=after;if(pos>after.length)pos=after.length;try{ta.setSelectionRange(pos,pos);}catch(e){}
     if(dropped>=3)flashDrop(dropped,s);}
   refresh();
@@ -389,15 +466,82 @@ function generate(steps,alpha,L){
 function strength(b){if(b<50)return['CRITICAL','s-crit'];if(b<72)return['WEAK','s-weak'];
   if(b<100)return['GOOD','s-good'];if(b<128)return['STRONG','s-strong'];return['MAXIMUM','s-max'];}
 
+/* ---- SIMULATED ROLLS (CSPRNG) ------------------------------------------
+   ไม่ใช่ entropy กายภาพ — สำหรับทดสอบระบบ หรือรหัสที่ไม่ซีเรียส
+   ใช้ rejection sampling บนไบต์ เพื่อไม่ให้เกิด modulo bias เหมือนกับ path หลัก */
+function randInt(n){                     // uniform [0,n) , n<=256
+  const lim=Math.floor(256/n)*n,a=new Uint8Array(1);
+  for(let i=0;i<10000;i++){crypto.getRandomValues(a);if(a[0]<lim)return a[0]%n;}
+  throw new Error('CSPRNG rejection cap exceeded');}
+function simDraws(){
+  const s=src(),alpha=alphabet(),K=alpha.length,L=parseInt($("len").value,10);
+  if(K<2)return null;
+  const KN=BigInt(K)**BigInt(L);
+  const toks=[];let R=1n,guard=0;
+  let rem=[...Array(52).keys()];
+  const one=()=>{
+    if(s==='coin'){R*=2n;return String(randInt(2));}
+    if(s==='d6'){R*=6n;return String(randInt(6)+1);}
+    if(s==='d16'){R*=16n;return "0123456789ABCDEF"[randInt(16)];}
+    const pos=randInt(rem.length);R*=BigInt(rem.length);
+    const ci=rem[pos];rem.splice(pos,1);if(rem.length===0)rem=[...Array(52).keys()];
+    return RANKS[ci%13]+SUITS[Math.floor(ci/13)];
+  };
+  while(R<KN&&guard++<6000)toks.push(one());
+  const margin={coin:12,d6:6,d16:4,cards:2}[s]||4;   // กันโดน rejection
+  for(let i=0;i<margin;i++)toks.push(one());
+  const g={coin:8,d6:5,d16:4,cards:1}[s]||5,out=[];
+  for(let i=0;i<toks.length;i+=g)out.push(toks.slice(i,i+g).join(''));
+  return out.join(' ');
+}
+function setSimState(){
+  $("simState").innerHTML=simUsed
+    ?'<b style="color:var(--red)">SIMULATED</b> — entropy จาก CSPRNG ไม่ใช่ของจริงในมือคุณ'
+    :'โหมดปกติ — ป้อนผลสุ่มกายภาพเอง (ceremony)';
+  const w=$("simWarn");
+  if(simUsed){w.style.display='block';
+    w.innerHTML='⚠ <b>TEST / NON-CEREMONIAL</b> — ผลสุ่มชุดนี้มาจาก CSPRNG ของเครื่อง ไม่ได้ทอยเอง · '+
+      'ความปลอดภัยขึ้นกับ OS/เบราว์เซอร์ ซึ่งคุณ verify ด้วยตาไม่ได้ · '+
+      '<b>ห้ามใช้กับ wallet/seed ของจริง</b> — สำหรับทดสอบระบบหรือรหัสความเสี่ยงต่ำเท่านั้น';}
+  else w.style.display='none';
+}
 function refresh(){
   const alpha=alphabet(),K=alpha.length,L=parseInt($("len").value,10),s=src();
   $("lenval").textContent=L;
   const bpc=K>1?log2(K):0,target=L*bpc;
-  const uAm=$("unambig").checked;
-  $("symcnt").textContent=$("c_sym").checked?[...new Set([...$("symset").value].filter(c=>c!==" "&&!(uAm&&SYM_BLOCK.includes(c))))].length:0;
-  $("unambigHint").textContent=uAm?'ตัด 0 O o 1 l I + สัญลักษณ์กำกวม':'off';
-  $("rK").textContent=K;$("rBPC").textContent=bpc.toFixed(3);$("rTgt").innerHTML=target.toFixed(1)+' <small>bit</small>';
+  const lv=ambLevel(),t=AMB[lv],floor=parseInt($("floor").value,10);
+
+  // ---- ambiguity level UI ----
+  for(let i=0;i<4;i++)$("ambL"+i).classList.toggle('sel',i===lv);
+  $("c_lower").disabled=t.killLo; $("c_sym").disabled=t.killSym;
+  $("c_lower").parentNode.classList.toggle('off',t.killLo);
+  $("c_sym").parentNode.classList.toggle('off',t.killSym);
+  $("symset").disabled=t.killSym;
+  $("symcnt").textContent=$("c_sym").checked?symList(t).length:0;
+  const cut=cutChars(),parts=[];
+  if(t.killLo&&$("c_lower").checked)parts.push('a–z ทั้งหมด');
+  if(t.killSym&&$("c_sym").checked)parts.push('สัญลักษณ์ทั้งหมด');
+  const single=cut.filter(c=>!( (t.killLo&&LO.includes(c)) || (t.killSym&&!/[A-Za-z0-9]/.test(c)) ));
+  if(single.length)parts.push(single.join(' '));
+  $("ambInfo").innerHTML='<b style="color:var(--cyan)">'+t.tag+'</b> — '+t.th+
+    (cut.length?'<br>ตัดออก '+cut.length+' ตัว: <span class="cutlist">'+esc(parts.join(' · '))+'</span>':'');
+
+  // ---- readout ----
+  const minLen=bpc>0?Math.ceil(floor/bpc):0;
+  $("rK").textContent=K;$("rBPC").textContent=bpc.toFixed(3);
+  $("rMin").innerHTML=(minLen||'–')+' <small>ch</small>';
+  $("rTgt").innerHTML=target.toFixed(1)+' <small>bit</small>';
   const [lab,cls]=strength(target);const st=$("rStr");st.textContent=lab;st.className='strength '+cls;
+
+  // ---- floor check: ตัดเยอะ = ต้องยาวขึ้น ----
+  const lw=$("lenWarn");
+  if(bpc<=0){lw.style.display='none';}
+  else if(minLen>64){lw.style.display='block';lw.className='msg err';
+    lw.innerHTML='⚠ ระดับนี้ให้แค่ '+bpc.toFixed(2)+' bit/ตัว → ต้องยาว '+minLen+' ตัวจึงถึง '+floor+' bit ซึ่งเกินลิมิต 64 — ลดระดับ filter หรือลด floor';}
+  else if(L<minLen){lw.style.display='block';lw.className='msg warn';
+    lw.innerHTML='⚠ สั้นไป '+(minLen-L)+' ตัว — ที่ K='+K+' ('+bpc.toFixed(2)+' bit/ตัว) ต้องใช้ <b>'+minLen+' ตัว</b> เพื่อให้ถึง '+floor+' bit · ตอนนี้ได้ '+target.toFixed(0)+' bit';}
+  else{lw.style.display='block';lw.className='msg ok';
+    lw.innerHTML='✓ ถึงเป้า — '+target.toFixed(0)+' bit ≥ '+floor+' bit (ขั้นต่ำที่ K='+K+' คือ '+minLen+' ตัว)';}
 
   // source help / required draws
   let help='',lbl='ROLLS ACCEPTED';
@@ -437,6 +581,17 @@ function refresh(){
 function classFlags(p){const f=[['A-Z',/[A-Z]/.test(p)],['a-z',/[a-z]/.test(p)],['0-9',/[0-9]/.test(p)],['SYM',/[^A-Za-z0-9]/.test(p)]];
   $("flags").innerHTML=f.map(([n,on])=>`<span class="cf ${on?'on':''}">${on?'✓':'·'} ${n}</span>`).join('');}
 
+$("simBtn").addEventListener('click',()=>{
+  let v;
+  try{v=simDraws();}catch(e){$("simWarn").style.display='block';$("simWarn").className='msg err';
+    $("simWarn").textContent='CSPRNG ของเบราว์เซอร์ผิดปกติ — สุ่มอัตโนมัติไม่ได้';return;}
+  if(v===null){$("simWarn").style.display='block';$("simWarn").className='msg err';
+    $("simWarn").textContent='เลือกชุดตัวอักษรอย่างน้อย 1 ชุดก่อน (K ต้อง > 1)';return;}
+  $("simWarn").className='msg warn';
+  simUsed=true;$("entropy").value=v;setSimState();sanitizeEntropy();
+  const b=$("simBtn"),t=b.textContent;b.textContent='✓ FILLED';setTimeout(()=>b.textContent=t,1000);
+});
+
 $("saltBtn").addEventListener('click',()=>{
   saltOn=!saltOn;const b=$("saltBtn");b.classList.toggle('on',saltOn);
   b.textContent=(saltOn?'✦ SYSTEM ENTROPY (SALT): ON':'✦ MIX SYSTEM ENTROPY (SALT)');
@@ -449,14 +604,16 @@ $("gen").addEventListener('click',()=>{
   try{r=generate(p.steps,alpha,L);}catch(e){gm.className='msg err';gm.textContent='ระบบสุ่ม (SALT/CSPRNG) ผิดปกติ — ปิด SALT แล้วลองใหม่';return;}
   if(!r.ok){gm.className='msg '+(r.reason==='rejected'?'warn':'err');
     gm.innerHTML=r.reason==='rejected'?'↻ REJECTION — สุ่มเพิ่มอีก 2–3 ครั้งแล้วกดใหม่':'entropy ไม่พอ — เติมผลสุ่มก่อน';return;}
-  gm.className='msg ok';gm.innerHTML='✓ GENERATED — '+(L*log2(alpha.length)).toFixed(1)+' bit'+(saltOn?' · SALTED':'');
-  last=r;last.raw=$("entropy").value;last.srcT=src();last.saltUsed=saltOn;last.K=alpha.length;last.L=L;last.uAmb=$("unambig").checked;
+  gm.className='msg '+(simUsed?'warn':'ok');
+  gm.innerHTML=(simUsed?'⚠':'✓')+' GENERATED — '+(L*log2(alpha.length)).toFixed(1)+' bit'+(saltOn?' · SALTED':'')+(simUsed?' · <b>SIMULATED (ห้ามใช้จริง)</b>':'');
+  last=r;last.raw=$("entropy").value;last.srcT=src();last.saltUsed=saltOn;last.K=alpha.length;last.L=L;last.amb=ambLevel();last.sim=simUsed;
   const o=$("out");o.textContent=r.pass;o.classList.remove('hidden');classFlags(r.pass);
   $("verifyBox").style.display='block';
+  $("vOrig").textContent=simUsed?'SIMULATED — CSPRNG (test only)':'PHYSICAL — ผู้ใช้ทอยเอง';
   $("vMode").textContent=saltOn?'SALTED (non-deterministic)':'DETERMINISTIC';
   $("vEnt").textContent=(L*log2(alpha.length)).toFixed(2)+' bit';
   $("vSrc").textContent=src();$("vN").textContent=p.steps.length;
-  $("vK").textContent=alpha.length;$("vL").textContent=L;
+  $("vAmb").textContent=AMB[ambLevel()].tag;$("vK").textContent=alpha.length;$("vL").textContent=L;
   $("vR").textContent=r.R.toString();$("vKN").textContent=r.KN.toString();
   $("vE").textContent=r.Ephys.toString();
   $("vS").textContent=saltOn?r.S.toString():'— (salt off)';
@@ -467,22 +624,32 @@ $("gen").addEventListener('click',()=>{
     tb.appendChild(tr);});
 });
 
-$("mask").addEventListener('click',()=>$("out").classList.toggle('hidden'));
+$("mask").addEventListener('click',()=>{if(!last)return;$("out").classList.toggle('hidden');});
 function legacyCopy(text){const ta=document.createElement('textarea');ta.value=text;
   document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);}
 $("copy").addEventListener('click',()=>{if(!last)return;const t=last.pass;
   if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).catch(()=>legacyCopy(t));}else legacyCopy(t);
   const b=$("copy"),o=b.textContent;b.textContent='✓ COPIED';setTimeout(()=>b.textContent=o,1200);});
-$("wipe").addEventListener('click',()=>{$("entropy").value='';last=null;const o=$("out");o.textContent='';o.classList.add('hidden');
+$("wipe").addEventListener('click',()=>{$("entropy").value='';last=null;const o=$("out");o.textContent='';o.classList.remove('hidden');
   $("flags").innerHTML='';$("verifyBox").style.display='none';$("mapBody").innerHTML='';$("genMsg").style.display='none';
   $("cardWrap").style.display='none';$("card").innerHTML='';
-  last=null;refresh();
+  simUsed=false;setSimState();last=null;refresh();
   const b=$("wipe"),t=b.textContent;b.textContent='✓ WIPED';setTimeout(()=>b.textContent=t,1200);});
 
-$("unambig").addEventListener('change',refresh);
-['c_upper','c_lower','c_digit','c_sym','symset','len'].forEach(id=>$(id).addEventListener('input',refresh));
+function applyAutoLen(){                       // ปรับ L ให้ถึง floor เมื่อ K เปลี่ยน
+  if(!$("autolen").checked)return;
+  const K=alphabet().length;if(K<2)return;
+  const need=Math.ceil(parseInt($("floor").value,10)/log2(K));
+  $("len").value=String(Math.min(64,Math.max(12,need)));
+}
+function specChanged(){applyAutoLen();refresh();}
+document.querySelectorAll('input[name=amb]').forEach(r=>r.addEventListener('change',specChanged));
+['c_upper','c_lower','c_digit','c_sym','symset'].forEach(id=>$(id).addEventListener('input',specChanged));
+$("floor").addEventListener('change',specChanged);
+$("autolen").addEventListener('change',specChanged);
+$("len").addEventListener('input',()=>{$("autolen").checked=false;refresh();});  // ลากเอง = ปิด auto
 $("entropy").addEventListener('input',sanitizeEntropy);
-document.querySelectorAll('input[name=src]').forEach(r=>r.addEventListener('change',()=>{$("entropy").value='';refresh();}));
+document.querySelectorAll('input[name=src]').forEach(r=>r.addEventListener('change',()=>{$("entropy").value='';simUsed=false;setSimState();refresh();}));
 function crcGroups(pass){let h='';for(let i=0;i<pass.length;i+=5){
   const g=esc(pass.slice(i,i+5));
   h+='<b><i>'+String(Math.floor(i/5)+1).padStart(2,'0')+'</i>'+g+'</b>';}return h;}
@@ -492,7 +659,7 @@ function buildCard(){
   const rawNorm=(last.raw||'').replace(/\s+/g,' ').trim();
   const salted=last.saltUsed,rcs=salted?'— (salted)':crc32(rawNorm);
   const srcName={coin:'COIN',d6:'D6',d16:'D16',cards:'CARDS'}[last.srcT]||last.srcT;
-  const cfg=[last.uAmb?'UNAMBIGUOUS':'',('K='+last.K),('L='+last.L),((last.L*log2(last.K)).toFixed(0)+' bit')].filter(Boolean).join(' · ');
+  const cfg=[last.sim?'⚠ SIMULATED':'',AMB[last.amb||0].tag,('K='+last.K),('L='+last.L),((last.L*log2(last.K)).toFixed(0)+' bit')].filter(Boolean).join(' · ');
   let rollsBlock='';
   if(rawNorm)rollsBlock=`<div class="sec"><div class="lbl">ENTROPY INPUT — ${srcName} · ${salted?'SALTED (สร้างซ้ำไม่ได้)':'DETERMINISTIC (สร้างซ้ำได้)'}</div>
     <div class="rolls">${esc(rawNorm)}</div>
@@ -506,9 +673,9 @@ function buildCard(){
       <div class="pass">${esc(pass)}</div>
       <div class="lbl">Passphrase checksum (CRC32): <span class="crc">${pcs}</span></div></div>
     ${rollsBlock}
-    <div class="warn">⚠ บัตรนี้มีความลับ — เก็บเหมือนเงินสด/ทองคำ · ${salted?'โหมด SALTED: ผลสุ่มไม่สร้าง passphrase ซ้ำ ให้สำรอง <b>ตัว passphrase</b> เป็นหลัก':'โหมด DETERMINISTIC: รันเครื่องนี้ด้วยผลสุ่ม + ตั้งค่าเดิม จะได้ passphrase เดิม (Don\u2019t Trust, Verify)'} · หลังคัดลอกด้วยมือ ให้พิมพ์กลับเข้าเครื่องแล้วเทียบ CRC32 ให้ตรงทุกครั้ง</div>`;
+    <div class="warn">${last.sim?'⚠⚠ <b>SIMULATED ENTROPY (CSPRNG)</b> — ไม่ได้ทอยเอง ห้ามใช้กับ wallet/seed ของจริง<br>':''}⚠ บัตรนี้มีความลับ — เก็บเหมือนเงินสด/ทองคำ · ${salted?'โหมด SALTED: ผลสุ่มไม่สร้าง passphrase ซ้ำ ให้สำรอง <b>ตัว passphrase</b> เป็นหลัก':'โหมด DETERMINISTIC: รันเครื่องนี้ด้วยผลสุ่ม + ตั้งค่าเดิม จะได้ passphrase เดิม (Don\u2019t Trust, Verify)'} · หลังคัดลอกด้วยมือ ให้พิมพ์กลับเข้าเครื่องแล้วเทียบ CRC32 ให้ตรงทุกครั้ง</div>`;
   $("cardWrap").style.display='block';
-  $("cardWrap").scrollIntoView({behavior:'smooth',block:'start'});
+  try{if($("cardWrap").scrollIntoView)$("cardWrap").scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
 }
 $("cardBtn").addEventListener('click',buildCard);
 $("printBtn").addEventListener('click',()=>{
@@ -525,10 +692,44 @@ $("printBtn").addEventListener('click',()=>{
 $("cardClose").addEventListener('click',()=>{$("cardWrap").style.display='none';});
 $("themeBtn").addEventListener('click',()=>{const light=document.body.classList.toggle('light');
   $("themeBtn").textContent=light?'☾ DARK':'☀ LIGHT';});
-function net(){const on=navigator.onLine,dot=$("netdot"),txt=$("netTxt"),pill=$("netPill");
-  dot.classList.toggle('red',on);pill.classList.toggle('warn',on);pill.classList.toggle('ok',!on);
-  txt.textContent=on?'AIRGAP NOT READY / เครื่องนี้กำลังเชื่อมต่อเครือข่าย':'AIRGAP READY / ออฟไลน์ พร้อมใช้งาน';}
-window.addEventListener('online',net);window.addEventListener('offline',net);net();refresh();
+/* navigator.onLine บอกได้แค่ว่า "มี network interface ที่ browser คิดว่าใช้ได้"
+   บน Tails/Tor Browser ค่านี้เป็น true แม้ตัดเน็ตแล้ว → ใช้ยืนยัน airgap ไม่ได้
+   เราจึงรายงานแค่สิ่งที่รู้จริง และให้ผู้ใช้ทดสอบ CSP เอง (Don't Trust, Verify) */
+function net(){
+  const off=(navigator.onLine===false),dot=$("netdot"),txt=$("netTxt"),pill=$("netPill");
+  dot.classList.toggle('red',false);dot.classList.toggle('amb',!off);
+  pill.classList.toggle('ok',off);pill.classList.toggle('warn',false);
+  txt.textContent=off?'LINK DOWN / OS รายงานว่าไม่มีการเชื่อมต่อ'
+                     :'LINK STATE UNVERIFIED / ตรวจสอบอัตโนมัติไม่ได้';
+  $("netNote").innerHTML=off
+    ?"OS รายงาน navigator.onLine = false · ถึงอย่างนั้นก็ยังยึด CSP <code>connect-src 'none'</code> เป็นด่านจริง — กด TEST EGRESS เพื่อพิสูจน์"
+    :"navigator.onLine = true บอกแค่ว่ามี network interface ทำงานอยู่ <b>ไม่ได้แปลว่าหน้านี้ส่งข้อมูลออกได้</b> — บน Tails/Tor Browser ค่านี้เป็น true เสมอแม้ถอดสาย/ปิด Wi‑Fi แล้ว · ด่านจริงคือ CSP <code>connect-src 'none'</code> → กด <b>TEST EGRESS</b> เพื่อพิสูจน์ด้วยตาตัวเอง";
+}
+
+/* ---- EGRESS SELF-TEST -------------------------------------------------
+   ยิง fetch ไปยัง *.invalid (RFC 2606 — TLD ที่รับประกันว่าไม่มีอยู่จริง)
+   ถ้า CSP ทำงาน เบราว์เซอร์จะบล็อกก่อนออกจากเครื่อง และยิง event
+   securitypolicyviolation ให้เราจับได้ = หลักฐานว่า connect-src 'none' บังคับใช้จริง */
+const PROBE='https://airgap-selftest.invalid/probe';
+let cspHit=false;
+document.addEventListener('securitypolicyviolation',e=>{
+  if((e.blockedURI||'').indexOf('airgap-selftest')>=0||
+     (e.violatedDirective||'').indexOf('connect-src')>=0)cspHit=true;});
+function cspSet(cls,txt){const p=$("cspPill");p.className='pill '+cls;p.innerHTML=txt;}
+$("cspBtn").addEventListener('click',()=>{
+  cspHit=false;cspSet('','⋯ TESTING…');
+  let resolved=false;
+  const done=()=>{
+    if(cspHit)cspSet('ok',"✓ EGRESS BLOCKED — CSP บังคับใช้จริง (verified)");
+    else if(resolved)cspSet('warn',"✗ EGRESS POSSIBLE — CSP ไม่ทำงาน อย่าใช้เครื่องนี้สร้างของจริง");
+    else cspSet('caution',"⚠ INCONCLUSIVE — ไม่พบ CSP violation (คำขออาจล้มเหลวเพราะเน็ตดับ)");
+  };
+  let p;
+  try{p=fetch(PROBE,{mode:'no-cors',cache:'no-store'});}
+  catch(e){setTimeout(done,150);return;}
+  p.then(()=>{resolved=true;}).catch(()=>{}).finally(()=>setTimeout(done,150));
+});
+window.addEventListener('online',net);window.addEventListener('offline',net);net();setSimState();applyAutoLen();refresh();
 </script>
 </body>
 </html>
