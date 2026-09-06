@@ -2,7 +2,7 @@
 
 # ⬡ PASSPHRASE FORGE
 
-### Entropy-to-Key Generator · เครื่องสร้างรหัสผ่านความปลอดภัยสูงจาก Entropy กายภาพ
+### Entropy-to-Key Generator · เครื่องมือสร้างรหัสผ่านความปลอดภัยสูงจากเอนโทรปีทางกายภาพ
 
 **_Don't Trust, Verify._**
 
@@ -11,6 +11,7 @@
 ![Build](https://img.shields.io/badge/build-single%20file%20HTML-blue)
 ![Runs on](https://img.shields.io/badge/runs%20on-Tails%20%2F%20Tor%20%2F%20file%3A%2F%2F-9146ff)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Version](https://img.shields.io/badge/version-2.0.0-ff9f1c)
 
 **🇬🇧 [English](#-english)   ·   🇹🇭 [ภาษาไทย](#-ภาษาไทย)**
 
@@ -59,9 +60,9 @@ It is built for generating and backing up **high-value, long-lived secrets** —
 | **Ambiguity filter** | **4 nested levels** (L3 ⊂ L2 ⊂ L1 ⊂ L0). L0 full (K=77) · L1 drops `0 O o 1 l I` (K=71) · L2 also drops `8/B 6/G/b 5/S/s 2/Z/z 9/g/q` (K=60) · L3 uppercase+digits only, no case, no symbols (K=27). Smaller K = fewer bits/char, so the tool raises the required length to hold the same total entropy |
 | **Simulate rolls** | Optional `SIMULATE ROLLS (CSPRNG)` button fills the entropy pool from `crypto.getRandomValues` using the same unbiased rejection sampling. **Test / low-stakes only** — the result is flagged SIMULATED in the status line, the verify panel (`entropy origin`) and the printed backup card. Never use it for a wallet seed |
 | **System salt (optional)** | Mixes a CSPRNG value so output isn't deterministic from dice alone |
-| **Backup card** | Printable, grouped passphrase + **CRC32** typo-check + timestamped filename |
-| **Verify panel** | Shows `E`, `R`, `K^L`, rejection limit, and a per-character base-K map |
-| **Extras** | Input masking · airgap indicator · dark/light theme · panic wipe |
+| **Backup card** | Printable, grouped passphrase + **CRC32** typo-check + timestamped filename + tool version and filter level |
+| **Verify panel** | Shows `E`, `R`, `K^L`, rejection limit, entropy origin, ambiguity level, and a per-character base-K map |
+| **Extras** | Output masking · link-state readout with a **TEST EGRESS** CSP self-check · dark/light theme · panic wipe |
 
 ### How it works (the principle)
 
@@ -92,7 +93,7 @@ The security is **mathematical**, and every intermediate value is displayed so y
       content="default-src 'none'; connect-src 'none'; ...">
 ```
 
-`connect-src 'none'` blocks **all** `fetch` / XHR / WebSocket. There is no CDN, no web font, no analytics — the file cannot phone home. This CSP, **not** the on-screen airgap light, is the real security boundary.
+`connect-src 'none'` blocks **all** `fetch` / XHR / WebSocket. There is no CDN, no web font, no analytics — the file cannot phone home. This CSP, **not** any on-screen status light, is the real security boundary — and the header **TEST EGRESS** button lets you prove it is enforced.
 
 ### Usage — step by step
 
@@ -100,20 +101,20 @@ The security is **mathematical**, and every intermediate value is displayed so y
 
 1. **Get offline.** Copy `passphrase-forge.html` to a USB / Tails persistent storage. Open it via `file://`. On Tor Browser, allow JavaScript for this local page. **Disconnect the network** (or use Tails offline mode). Note that `navigator.onLine` is not a reliable airgap indicator — on Tails / Tor Browser it stays `true` even with the network pulled, so the header reports **LINK STATE UNVERIFIED** rather than claiming you are online. The real barrier is the CSP `connect-src 'none'`: press **TEST EGRESS** in the header to prove it, and look for **EGRESS BLOCKED (verified)**.
 
-2. **`[01] Output spec.** Tick the character classes you want (A–Z / a–z / 0–9 / symbols) and edit the symbol set if desired. Pick an **Ambiguity filter** level (L0–L3) — L2 for hand-copying, L3 for handwriting, OCR or metal stamping. Set a **Security floor** (80–256 bit); with **Auto-length** on, `L = ceil(floor / log2 K)` is applied automatically whenever `K` changes. Moving the slider by hand turns Auto-length off and shows how many characters you are short. The panel shows `K`, bits/char, min length at the floor, target entropy, and a strength rating.
+2. **`[01]` Output spec.** Tick the character classes you want (A–Z / a–z / 0–9 / symbols) and edit the symbol set if desired. Pick an **Ambiguity filter** level (L0–L3) — L2 for hand-copying, L3 for handwriting, OCR or metal stamping. Set a **Security floor** (80–256 bit); with **Auto-length** on, `L = ceil(floor / log2 K)` is applied automatically whenever `K` changes. Moving the slider by hand turns Auto-length off and shows how many characters you are short. The panel shows `K`, bits/char, min length at the floor, target entropy, and a strength rating.
 
-3. **`[02] Source.** Choose Coin, D6, D16, or Cards. The help line tells you how many rolls you need (with a small recommended buffer so rejection ≈ 0).
+3. **`[02]` Source.** Choose Coin, D6, D16, or Cards. The help line tells you how many rolls you need (with a small recommended buffer so rejection ≈ 0).
 
-4. **`[03] Input.** Physically roll/flip/draw and type the results. The field accepts only valid characters for the chosen source:
+4. **`[03]` Input.** Physically roll/flip/draw and type the results. The field accepts only valid characters for the chosen source:
    - **Coin:** `0 1` or `H T`
    - **D6:** `1`–`6`
    - **D16:** `0`–`9`, `A`–`F`
    - **Cards:** rank + suit, e.g. `AS KH 10D 7C QS` (suits `S H D C`; type them run-together like `askh10d7c` and spacing is added automatically; reshuffle and keep drawing after 52).
    Watch the **ENTROPY POOL** bar fill to **READY**.
 
-5. **`[04] Derive.** Optionally toggle **✦ SALT** (system-entropy mixing). Press **GENERATE**.
+5. **`[04]` Derive.** Optionally toggle **✦ SALT** (system-entropy mixing). Press **GENERATE**.
 
-6. **`[05] Output.** Copy the passphrase, or press **BACKUP CARD → PRINT** for a printable card containing the grouped passphrase, a **CRC32 checksum**, and (if salt is off) the recorded rolls. Open the **Verify** panel to audit `E`, `R`, `K^L`, and the character map by hand. When done, press **PANIC WIPE**.
+6. **`[05]` Output.** Copy the passphrase, or press **BACKUP CARD → PRINT** for a printable card containing the grouped passphrase, a **CRC32 checksum**, and (if salt is off) the recorded rolls. Open the **Verify** panel to audit `E`, `R`, `K^L`, and the character map by hand. When done, press **PANIC WIPE**.
 
 **Backup verification workflow:** after copying the passphrase by hand, type it back into any field and compare its CRC32 to the one on the card — if they match, you copied it correctly.
 
@@ -138,91 +139,93 @@ The security is **mathematical**, and every intermediate value is displayed so y
 
 ### ภาพรวม
 
-**PASSPHRASE FORGE** คือเครื่องมือ HTML ไฟล์เดียว ทำงานออฟไลน์ 100% ที่แปลง **entropy กายภาพ** — การโยนเหรียญ ทอยลูกเต๋า หรือจั่วไพ่ — ให้เป็นรหัสผ่านความปลอดภัยสูง โดยตัวอักษรทุกตำแหน่งถูกสุ่มแบบ **uniform อย่างพิสูจน์ได้** ไม่มี **modulo bias**, ไม่ต้องเชื่อ **hash**, และ **ไม่มีการเชื่อมต่อเครือข่ายแม้แต่ครั้งเดียว**
+**PASSPHRASE FORGE** คือเครื่องมือรูปแบบ HTML ไฟล์เดียวที่ทำงานแบบออฟไลน์ 100% ออกแบบมาเพื่อแปลง **เอนโทรปีทางกายภาพ (Physical Entropy)** — เช่น การโยนเหรียญ ทอยลูกเต๋า หรือจั่วไพ่ — ให้กลายเป็นรหัสผ่านที่มีความปลอดภัยสูง ตัวอักษรในทุกตำแหน่งถูกสุ่มด้วยความน่าจะเป็นที่เท่ากันอย่างพิสูจน์ได้ (Provably Uniform) ปราศจากความเอนเอียงทางคณิตศาสตร์ (No Modulo Bias) ไม่พึ่งพากระบวนการ Hash ที่ตรวจสอบไม่ได้ และ **ไม่มีการเชื่อมต่อเครือข่ายโดยเด็ดขาด**
 
-ออกแบบมาเพื่อสร้างและสำรอง **ความลับมูลค่าสูง อายุยาว** เช่น **BIP39 passphrase** ("คำที่ 25") บนเครื่อง air-gapped อย่าง **Tails OS**
+เหมาะสำหรับการสร้างและสำรอง **ความลับที่มีมูลค่าสูงและต้องเก็บรักษาระยะยาว** เช่น **BIP39 Passphrase** (คำที่ 25) โดยใช้งานบนเครื่องที่ตัดขาดจากเครือข่าย (Air-gapped Machine) อย่าง **Tails OS**
 
 ### ความสามารถ
 
 | ฟีเจอร์ | รายละเอียด |
 |---|---|
-| **แหล่ง Entropy** | เหรียญ (1 bit) · D6 (2.585 bit) · D16 (4 bit) · ไพ่ 52 ใบ (~5.70 bit ลดลงเรื่อย ๆ) |
-| **ผลลัพธ์** | A–Z / a–z / 0–9 / สัญลักษณ์ (แก้ได้) · แถบเลื่อนความยาว **12–50** |
-| **Ambiguity filter** | **4 ระดับซ้อนกัน** (L3 ⊂ L2 ⊂ L1 ⊂ L0) · L0 ครบ (K=77) · L1 ตัด `0 O o 1 l I` (K=71) · L2 ตัดเพิ่ม `8/B 6/G/b 5/S/s 2/Z/z 9/g/q` (K=60) · L3 เหลือพิมพ์ใหญ่+เลข ไม่มีเคส/สัญลักษณ์ (K=27) · ยิ่งตัดมาก bit/ตัวยิ่งน้อย เครื่องจะเพิ่มความยาวที่ต้องใช้ให้เอง |
-| **Simulate rolls** | ปุ่ม `SIMULATE ROLLS (CSPRNG)` เติม entropy ให้อัตโนมัติจาก `crypto.getRandomValues` ด้วย rejection sampling แบบเดียวกับ path หลัก · **สำหรับทดสอบ/รหัสไม่ซีเรียสเท่านั้น** ผลจะถูกติดธง SIMULATED ทั้งในแถบสถานะ แผง verify (`entropy origin`) และบัตร backup ที่พิมพ์ออกมา · ห้ามใช้กับ seed จริง |
-| **System salt (เลือกได้)** | ผสมค่าจาก CSPRNG เพื่อให้ผลไม่ deterministic จากลูกเต๋าอย่างเดียว |
-| **Backup card** | พิมพ์ได้ · passphrase จัดกลุ่ม + **CRC32** กันจดผิด + ชื่อไฟล์มีวันที่-เวลา |
-| **Verify panel** | แสดง `E`, `R`, `K^L`, ขอบเขต rejection และตารางแปลงตัวอักษรฐาน K |
-| **อื่น ๆ** | Input masking · ไฟสถานะ airgap · ธีมมืด/สว่าง · panic wipe |
+| **แหล่งกำเนิด Entropy** | เหรียญ (1 bit) · ลูกเต๋า D6 (2.585 bit) · ลูกเต๋า D16 (4 bit) · ไพ่ 52 ใบ (~5.70 bit และลดลงเรื่อย ๆ ตามจำนวนไพ่ที่เหลือ) |
+| **รูปแบบผลลัพธ์** | รองรับ A–Z / a–z / 0–9 / สัญลักษณ์ (แก้ไขเองได้) · ปรับความยาวได้ตั้งแต่ **12–64** ตัวอักษร · กำหนดระดับความปลอดภัยขั้นต่ำ (Security Floor) ได้ตั้งแต่ 80–256 bit พร้อมระบบปรับความยาวอัตโนมัติ |
+| **ตัวกรองอักขระกำกวม (Ambiguity Filter)** | **กรองได้ 4 ระดับซ้อนกัน** (L3 ⊂ L2 ⊂ L1 ⊂ L0) · L0 ใช้ชุดเต็ม (K=77) · L1 ตัด `0 O o 1 l I` ออก (K=71) · L2 ตัดเพิ่ม `8/B 6/G/b 5/S/s 2/Z/z 9/g/q` (K=60) · L3 เหลือเพียงตัวพิมพ์ใหญ่กับตัวเลข ไม่มีตัวพิมพ์เล็กและสัญลักษณ์ (K=27) · ยิ่งกรองออกมาก จำนวน bit ต่อตัวอักษรยิ่งลดลง ระบบจะคำนวณเพิ่มความยาวรหัสผ่านชดเชยให้อัตโนมัติ |
+| **ระบบจำลองการสุ่ม (Simulate Rolls)** | ปุ่ม `SIMULATE ROLLS (CSPRNG)` เติมเอนโทรปีให้อัตโนมัติจากตัวสุ่มของระบบ (`crypto.getRandomValues`) ด้วย rejection sampling แบบเดียวกับเส้นทางหลัก · **ใช้สำหรับทดสอบระบบหรือรหัสผ่านที่ไม่สำคัญเท่านั้น** ผลลัพธ์จะถูกติดธง SIMULATED ทั้งในแถบสถานะ แผงตรวจสอบ (`entropy origin`) และบนบัตรสำรองที่พิมพ์ออกมา · **ห้ามใช้กับ Wallet Seed เด็ดขาด** |
+| **System Salt (ทางเลือกเสริม)** | ผสมค่าจาก CSPRNG เข้าไปในกระบวนการ เพื่อไม่ให้ผลลัพธ์ผูกติดกับค่าลูกเต๋าเพียงอย่างเดียว |
+| **บัตรสำรองข้อมูล (Backup Card)** | สั่งพิมพ์ออกทางเครื่องพิมพ์ได้ · รหัสผ่านจัดกลุ่มให้อ่านง่าย + เช็กซัม **CRC32** ป้องกันการจดผิด + ชื่อไฟล์ระบุวันเวลา + บันทึกเวอร์ชันเครื่องมือและระดับ Filter ที่ใช้ |
+| **แผงตรวจสอบ (Verify Panel)** | แสดงกระบวนการทางคณิตศาสตร์อย่างโปร่งใส ทั้งค่า `E`, `R`, `K^L`, ขอบเขตการคัดกรอง (Rejection Limit), แหล่งที่มาของเอนโทรปี, ระดับ Filter และตารางแปลงเลขฐาน K แบบตัวต่อตัว |
+| **อื่น ๆ** | ซ่อนรหัสผ่านขณะแสดงผล (Input Masking) · แถบสถานะการเชื่อมต่อพร้อมปุ่มทดสอบ **TEST EGRESS** · ธีมมืด/สว่าง · ปุ่ม Panic Wipe เพื่อลบข้อมูลบนหน้าจอทันที |
 
 ### หลักการทำงาน
 
-ความปลอดภัยอยู่ที่ **คณิตศาสตร์** และทุกค่ากลางถูกแสดงให้ตรวจสอบด้วยมือได้
+ความปลอดภัยของระบบนี้ตั้งอยู่บน **คณิตศาสตร์** ล้วน ๆ โดยค่าตัวแปรระหว่างทางทั้งหมดจะถูกแสดงไว้บนหน้าจอ เพื่อให้คุณคำนวณตรวจสอบซ้ำด้วยตนเองได้
 
-**สัญลักษณ์:** `K` = ขนาดชุดตัวอักษร · `L` = ความยาว · `r` = จำนวนหน้าของอุปกรณ์ (ฐาน) · `d` = ค่าที่สุ่มได้แต่ละครั้ง
+**คำศัพท์ที่ใช้:** `K` = ขนาดของชุดตัวอักษร · `L` = ความยาวของรหัสผ่าน · `r` = จำนวนหน้าของอุปกรณ์สุ่ม (ฐานเลข) · `d` = ผลลัพธ์จากการสุ่มแต่ละครั้ง
 
-1. **รวบรวม (mixed-radix).** ผลสุ่มแต่ละครั้งกลายเป็นเลขหนึ่งหลักของจำนวนเต็มก้อนใหญ่:
-   `E = E·r + d` และ `R = R·r` (คำนวณด้วย `BigInt`)
-   - เหรียญ `r=2`, D6 `r=6`, D16 `r=16`
-   - **ไพ่** ใช้การจั่วแบบไม่คืน (*Lehmer code*): ฐานลดลง 52 → 51 → 50 … และ `d` คืออันดับของไพ่ที่จั่วในกองที่เหลือ · ไพ่เต็มสำรับให้ `log2(52!) ≈ 225.58` bit
-   - `E` คือ entropy ที่เก็บได้เป็นจำนวนเต็มใน `[0, R)` · `R` คือจำนวนความเป็นไปได้ทั้งหมด
+1. **รวบรวมเอนโทรปี (Mixed-radix)** — ผลการสุ่มแต่ละครั้งถูกนำไปต่อกันเป็นเลขจำนวนเต็มขนาดใหญ่ตัวเดียว: `E = E·r + d` และ `R = R·r` (ประมวลผลด้วย `BigInt`)
+   - เหรียญ `r=2` · ลูกเต๋า D6 `r=6` · ลูกเต๋า D16 `r=16`
+   - **ไพ่** ใช้หลักการจั่วแบบไม่ใส่คืน (*Lehmer Code*) ฐานจะลดลงเรื่อย ๆ จาก 52 → 51 → 50 … และ `d` คือลำดับของไพ่ที่จั่วได้เทียบกับกองที่เหลือ · ไพ่หนึ่งสำรับเต็มให้เอนโทรปีประมาณ `log2(52!) ≈ 225.58` bit
+   - `E` คือเอนโทรปีที่รวบรวมได้ในรูปเลขจำนวนเต็มในช่วง `[0, R)` ส่วน `R` คือจำนวนลำดับการสุ่มที่เป็นไปได้ทั้งหมด
 
-2. **ตรวจปริมาณ (Gate).** จะสร้างรหัสไม่ได้จนกว่า `R ≥ K^L` — คือเก็บ entropy พอกับพื้นที่ผลลัพธ์ที่ต้องการ
+2. **ตรวจสอบปริมาณเอนโทรปี (Gate)** — ระบบจะไม่ยอมให้สร้างรหัสผ่านจนกว่า `R ≥ K^L` นั่นคือคุณต้องรวบรวมเอนโทรปีให้มากพอครอบคลุมความเป็นไปได้ทั้งหมดของผลลัพธ์
 
-3. **กำจัด modulo bias (rejection sampling).** ถ้าเอา `E mod K^L` ตรง ๆ ตัวอักษรบางตัวจะออกบ่อยกว่า (เพราะ `R` มักหารด้วย `K^L` ไม่ลงตัว) เครื่องจึงรับ `E` เฉพาะเมื่อ `E < ⌊R / K^L⌋ · K^L` ถ้าเกินก็ขอให้ทอยเพิ่ม · ค่า `U = E mod K^L` ที่ผ่านจึง **uniform เป๊ะ** ทั่วทั้ง `K^L`
+3. **กำจัดความเอนเอียง (Rejection Sampling)** — หากนำ `E mod K^L` มาใช้ตรง ๆ ตัวอักษรบางตัวจะมีโอกาสออกบ่อยกว่าตัวอื่นเล็กน้อย (เพราะ `R` มักหารด้วย `K^L` ไม่ลงตัว) ระบบจึงยอมรับค่า `E` ก็ต่อเมื่อ `E < ⌊R / K^L⌋ · K^L` เท่านั้น หากเกินขอบเขตนี้จะแจ้งให้สุ่มเพิ่ม · ค่า `U = E mod K^L` ที่ผ่านเกณฑ์แล้วจะกระจายตัว **เท่ากันอย่างสมบูรณ์ (Uniform)** ทั่วทั้งขอบเขต `K^L`
 
-4. **ถอดกลับ (base conversion).** เขียน `U` เป็นเลขฐาน `K` แต่ละหลักเลือกตัวอักษร 1 ตัว → เทียบเท่ากับการ **สุ่มแต่ละตำแหน่งอิสระแบบ uniform** จากชุด `K` สัญลักษณ์
+4. **แปลงกลับเป็นตัวอักษร (Base Conversion)** — นำค่า `U` มาเขียนในเลขฐาน `K` โดยแต่ละหลักจับคู่กับตัวอักษรหนึ่งตัว ผลลัพธ์เทียบเท่ากับการ **สุ่มตัวอักษรแต่ละตำแหน่งอย่างเป็นอิสระด้วยความน่าจะเป็นเท่ากัน** จากชุดสัญลักษณ์ `K` ตัว
 
-5. **(เลือก) Salt.** สุ่มค่า `S` แบบ uniform ใน `[0, R)` ด้วย `crypto.getRandomValues` แล้ว `E' = (E + S) mod R` เพื่อ whiten input กายภาพ — ทำให้แม้ลูกเต๋าลำเอียงหรือถูกแอบดูก็เดาผลไม่ได้ · เป็น *defense-in-depth* **ไม่ได้ลด** ปริมาณ entropy กายภาพที่ต้องเก็บ
+5. **เติม System Salt (ทางเลือกเสริม)** — สุ่มค่า `S` ในช่วง `[0, R)` ด้วย `crypto.getRandomValues` แล้วผสมผ่านสมการ `E' = (E + S) mod R` เพื่อเจือจางข้อมูลนำเข้า (Whiten Input) ทำให้แม้ใช้ลูกเต๋าที่ลำเอียงหรือถูกแอบดูผลการทอย ก็ยังเดารหัสผ่านไม่ได้ · Salt เป็นเพียงเกราะชั้นเสริม (*Defense-in-depth*) และ **ไม่ได้ช่วยลด** ปริมาณเอนโทรปีทางกายภาพที่คุณต้องรวบรวม
 
-> **ไม่มีการ hash** — entropy ของผลลัพธ์เท่ากับ entropy กายภาพที่ป้อน (`L · log2(K)` bit) ไม่มีอะไรต้องเชื่อนอกจากเลขคณิตที่ตรวจซ้ำได้เอง · ความแข็งแรงจริง = `min(entropy ที่ป้อน, พื้นที่ผลลัพธ์)` จึงเป็นเหตุผลที่เครื่องบังคับ `R ≥ K^L`
+> **ระบบนี้ไม่มีการใช้ Hashing** — เอนโทรปีของผลลัพธ์เท่ากับเอนโทรปีทางกายภาพที่ป้อนเข้ามาพอดี (`L · log2(K)` bit) ไม่มีอัลกอริทึมลับให้ต้องเชื่อ มีแต่คณิตศาสตร์ที่คุณตรวจสอบเองได้ · ความแข็งแกร่งที่แท้จริง = `min(เอนโทรปีที่ป้อน, พื้นที่ความเป็นไปได้ของผลลัพธ์)` นี่คือเหตุผลที่ระบบบังคับ `R ≥ K^L` เสมอ
 
-**การรับประกันว่าไม่มีข้อมูลรั่วออก** — หน้าเว็บฝัง Content-Security-Policy แบบเข้มงวด:
+**การรับประกันว่าไม่มีข้อมูลรั่วไหล** — หน้าเว็บนี้ฝัง Content-Security-Policy ที่เข้มงวดไว้:
 
 ```html
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'none'; connect-src 'none'; ...">
 ```
 
-`connect-src 'none'` บล็อก `fetch` / XHR / WebSocket **ทั้งหมด** ไม่มี CDN, web font, analytics — ไฟล์ส่งข้อมูลออกไม่ได้เลย · **CSP นี้** คือเส้นแบ่งความปลอดภัยจริง ไม่ใช่ไฟสถานะบนจอ
+คำสั่ง `connect-src 'none'` บล็อก `fetch` / XHR / WebSocket **ทั้งหมด** ไม่มีการเรียกใช้ CDN, Web Font หรือสคริปต์ Analytics ภายนอก — ไฟล์นี้ส่งข้อมูลออกไปไหนไม่ได้ · **นโยบาย CSP นี้** คือเส้นแบ่งความปลอดภัยที่แท้จริง ไม่ใช่ไฟสถานะบนหน้าจอ
 
 ### วิธีใช้งาน — ทีละขั้น
 
-**เตรียมพร้อม:** เบราว์เซอร์ (Tor Browser หรือรุ่นใหม่ใดก็ได้) · สำหรับความลับจริง ให้ใช้เครื่อง air-gapped (แนะนำ Tails OS)
+**การเตรียมความพร้อม:** ใช้เบราว์เซอร์ยุคใหม่หรือ Tor Browser · หากนำไปใช้กับความลับที่มีมูลค่าจริง ควรใช้เครื่องที่ไม่ได้เชื่อมต่อเครือข่าย (Air-gapped) เช่น Tails OS
 
-1. **ออฟไลน์ก่อน.** คัดลอก `passphrase-forge.html` ลง USB / Tails persistent → เปิดผ่าน `file://` (บน Tor Browser อนุญาต JavaScript หน้านี้) → **ตัดการเชื่อมต่อเครือข่าย** (หรือใช้ Tails offline mode) · หมายเหตุ: `navigator.onLine` ใช้ยืนยัน airgap ไม่ได้ — บน Tails/Tor Browser ค่านี้เป็น `true` เสมอแม้ถอดสายแล้ว หัวหน้าจอจึงขึ้น **LINK STATE UNVERIFIED** แทนที่จะกล่าวหาว่าคุณต่อเน็ตอยู่ · ด่านจริงคือ CSP `connect-src 'none'` → กด **TEST EGRESS** บนหัว แล้วดูว่าขึ้น **EGRESS BLOCKED (verified)**
+1. **ตัดการเชื่อมต่อ (Go Offline)** — คัดลอกไฟล์ `passphrase-forge.html` ลง USB หรือที่เก็บข้อมูลถาวรของ Tails แล้วเปิดผ่านโปรโตคอล `file://` (หากใช้ Tor Browser ให้อนุญาตการรันสคริปต์สำหรับหน้านี้) จากนั้น **ถอดสายแลนหรือปิด Wi-Fi**
+   > **ข้อควรทราบ:** ฟังก์ชัน `navigator.onLine` ใช้ยืนยันการตัดขาดเครือข่ายไม่ได้ — บน Tails/Tor Browser ค่านี้เป็น `true` เสมอแม้ตัดการเชื่อมต่อแล้ว ส่วนหัวจึงแสดง **LINK STATE UNVERIFIED** แทนที่จะกล่าวหาว่าคุณกำลังออนไลน์ · ปราการที่แท้จริงคือ CSP `connect-src 'none'` ทดสอบได้ด้วยการกดปุ่ม **TEST EGRESS** แล้วสังเกตข้อความ **EGRESS BLOCKED (verified)**
 
-2. **`[01] Output spec.** ติ๊กชุดตัวอักษรที่ต้องการ (A–Z / a–z / 0–9 / สัญลักษณ์) แก้ชุดสัญลักษณ์ได้ · เลือก **Ambiguity filter** L0–L3 (L2 สำหรับคัดลอกด้วยมือ · L3 สำหรับลายมือ/OCR/สลักโลหะ) · ตั้ง **Security floor** (80–256 bit) เปิด **Auto-length** เครื่องจะตั้ง `L = ceil(floor ÷ log2 K)` ให้อัตโนมัติทุกครั้งที่ `K` เปลี่ยน · ถ้าลากสไลเดอร์เอง auto จะปิดและเตือนว่าขาดอีกกี่ตัว · แผงจะบอก `K`, bit/ตัว, ความยาวขั้นต่ำ, target entropy และระดับความแข็งแรง
+2. **`[01]` กำหนดรูปแบบผลลัพธ์ (Output Spec)** — เลือกชุดอักขระที่ต้องการ (A–Z / a–z / 0–9 / สัญลักษณ์) และแก้ไขชุดสัญลักษณ์ได้ตามต้องการ · เลือกระดับ **Ambiguity Filter** L0–L3 (L2 เหมาะกับการคัดลอกด้วยมือ · L3 เหมาะกับการเขียนด้วยลายมือ, OCR หรืองานตอกสลักแผ่นโลหะ) · กำหนด **Security Floor** (80–256 bit) หากเปิด **Auto-length** ระบบจะตั้งค่า `L = ceil(floor ÷ log2 K)` ให้อัตโนมัติทุกครั้งที่ `K` เปลี่ยน · หากเลื่อนแถบความยาวเอง ระบบจะปิด Auto-length แล้วแจ้งว่าคุณยังขาดอีกกี่ตัวอักษร · แผงสถานะแสดงค่า `K`, จำนวน bit ต่อตัวอักษร, ความยาวขั้นต่ำที่ต้องใช้, เอนโทรปีเป้าหมาย และระดับความแข็งแกร่ง
 
-3. **`[02] Source.** เลือก Coin / D6 / D16 / Cards · บรรทัดช่วยเหลือจะบอกว่าต้องสุ่มกี่ครั้ง (พร้อม buffer เล็กน้อยให้ rejection ≈ 0)
+3. **`[02]` เลือกแหล่งอ้างอิง (Source)** — เลือกเหรียญ, ลูกเต๋า D6, ลูกเต๋า D16 หรือไพ่ 52 ใบ · ระบบจะคำนวณล่วงหน้าว่าต้องสุ่มกี่ครั้ง (พร้อมเผื่อไว้เล็กน้อยเพื่อให้โอกาสถูก Reject ใกล้ศูนย์)
 
-4. **`[03] Input.** ทอย/โยน/จั่วจริง แล้วพิมพ์ผล · ช่องรับเฉพาะอักขระที่ตรงกับ source:
-   - **Coin:** `0 1` หรือ `H T`
-   - **D6:** `1`–`6`
-   - **D16:** `0`–`9`, `A`–`F`
-   - **Cards:** อันดับ+ดอก เช่น `AS KH 10D 7C QS` (ดอก `S H D C` · พิมพ์ติดกันได้ เช่น `askh10d7c` ระบบเว้นวรรคให้ · ครบ 52 ใบให้สับใหม่แล้วจั่วต่อ)
-   ดูแถบ **ENTROPY POOL** จนขึ้น **READY**
+4. **`[03]` ป้อนข้อมูลการสุ่ม (Input)** — ทอยลูกเต๋า โยนเหรียญ หรือจั่วไพ่จริง แล้วพิมพ์ผลลัพธ์ลงในช่อง (ช่องนี้รับเฉพาะตัวอักษรที่ตรงกับแหล่งอ้างอิงที่เลือก)
+   - **เหรียญ (Coin):** `0 1` หรือ `H T`
+   - **ลูกเต๋า (D6):** `1`–`6`
+   - **ลูกเต๋า 16 หน้า (D16):** `0`–`9`, `A`–`F`
+   - **ไพ่ (Cards):** อันดับไพ่ตามด้วยดอก เช่น `AS KH 10D 7C QS` (ดอกไพ่ใช้ `S H D C` · พิมพ์ติดกันเป็น `askh10d7c` ได้เลย ระบบจะเว้นวรรคให้เอง · หากจั่วครบ 52 ใบ ให้สับใหม่แล้วจั่วต่อได้ทันที)
 
-5. **`[04] Derive.** จะเปิด **✦ SALT** (ผสม system entropy) หรือไม่ก็ได้ → กด **GENERATE**
+   สังเกตแถบ **ENTROPY POOL** จนขึ้นสถานะ **READY** · หากต้องการเพียงทดสอบระบบ กดปุ่ม **🎲 SIMULATE ROLLS** เพื่อให้เครื่องเติมค่าให้ (ผลลัพธ์จะถูกติดธง SIMULATED และห้ามนำไปใช้จริง)
 
-6. **`[05] Output.** คัดลอก passphrase หรือกด **BACKUP CARD → PRINT** เพื่อพิมพ์บัตรที่มี passphrase จัดกลุ่ม + **CRC32** + ผลสุ่ม (ถ้าปิด salt) · เปิดแผง **Verify** เพื่อตรวจ `E`, `R`, `K^L` และตารางตัวอักษรด้วยมือ · เสร็จแล้วกด **PANIC WIPE**
+5. **`[04]` ประมวลผล (Derive)** — เลือกเปิดหรือปิด **✦ SALT** (นำเอนโทรปีของเครื่องมาผสม) แล้วกด **GENERATE**
 
-**ขั้นตอนตรวจ backup:** หลังคัดลอก passphrase ด้วยมือ ให้พิมพ์กลับเข้าช่องใดก็ได้ แล้วเทียบ CRC32 กับบนบัตร — ถ้าตรง = คัดลอกถูก
+6. **`[05]` ผลลัพธ์และสำรองข้อมูล (Output)** — คัดลอกรหัสผ่าน หรือกด **BACKUP CARD → PRINT** เพื่อพิมพ์บัตรสำรองที่มีรหัสผ่านจัดกลุ่มให้อ่านง่าย, เช็กซัม **CRC32**, เวอร์ชันเครื่องมือ, ระดับ Filter และผลการสุ่มทั้งหมด (เฉพาะเมื่อปิด Salt) · เปิดแผง **Verify** เพื่อตรวจสอบค่า `E`, `R`, `K^L` และตารางแปลงตัวอักษรด้วยตาเปล่า · เมื่อเสร็จสิ้นให้กด **PANIC WIPE**
+
+**ข้อแนะนำในการคัดลอกด้วยมือ:** หลังจดรหัสผ่านลงกระดาษแล้ว ให้พิมพ์กลับเข้าไปในช่องข้อความใดก็ได้ แล้วเทียบค่า CRC32 กับบนบัตร — หากตรงกัน แสดงว่าคัดลอกถูกต้องครบทุกตัวอักษร
 
 ### การตรวจสอบและ Audit
 
-- **คณิตศาสตร์แกนผ่านการทดสอบ:** ยืนยัน uniform (χ²/df ≈ 1.0 จาก 200k ตัวอย่าง) · CRC32 ตรง known vector (`123456789` → `CBF43926`) · entropy ไพ่ = `log2(52!) ≈ 225.58` bit
-- **Dual-AI cross-review:** ตรวจโดย LLM 2 ตัวอิสระ · ข้อที่ถูกต้อง (custom-symbol ถูกเขียนทับ, clipboard API ล้าสมัย, CSPRNG loop ไม่มี cap) แก้แล้ว · ข้อที่ผิด threat model (เช่นเสนอเปลี่ยน CRC32 เป็น SHA-256 ทั้งที่ใช้แค่กันพิมพ์ผิด) วิเคราะห์แล้วปฏิเสธพร้อมเหตุผล
-- **ตรวจเองได้:** ไฟล์อ่านออก — อ่าน CSP, อ่าน `generate()`, และไล่ตรวจแผง Verify ด้วยมือ
+- **ผ่านการทดสอบแกนกลางคณิตศาสตร์** — ยืนยันการกระจายตัวแบบ Uniform (χ²/df ≈ 1.0 จากกลุ่มตัวอย่าง 200k) · ตรวจสอบ CRC32 กับ Known Vectors แล้ว (`123456789` → `CBF43926`) · ยืนยันเอนโทรปีของไพ่ที่ `log2(52!) ≈ 225.58` bit · ตัวสุ่มจำลอง (Simulate) ผ่าน chi-square 120,000 ตัวอย่างต่อค่า
+- **ผ่านการตรวจทานไขว้โดย AI สองระบบ (Dual-AI cross-review)** — โค้ดถูก Audit โดย LLM ต่างรุ่นกันอย่างเป็นอิสระ · ข้อบกพร่องที่พบจริง (การเขียนทับชุดสัญลักษณ์ที่ผู้ใช้กำหนดเอง, Clipboard API ที่ล้าสมัย, ลูป CSPRNG ที่ไม่มีขอบเขต) ได้รับการแก้ไขแล้ว · ส่วนข้อเสนอที่ไม่ตรงกับ Threat Model (เช่น เสนอให้เปลี่ยนเช็กซัมจาก CRC32 เป็น SHA-256 ทั้งที่มีไว้เพียงกันพิมพ์ผิด) ได้รับการพิจารณาและปฏิเสธพร้อมเหตุผลกำกับ
+- **ระบบโปร่งใส ตรวจสอบเองได้** — ซอร์สโค้ดในไฟล์อ่านทำความเข้าใจได้ คุณสามารถตรวจนโยบาย CSP, ฟังก์ชัน `generate()` และไล่ดูตัวแปรในแผง Verify ด้วยตนเอง
 
 ### ข้อควรระวังและข้อจำกัดความรับผิด
 
-- โปรเจกต์ส่วนตัว **ไม่ใช่** ผลิตภัณฑ์ที่ผ่าน audit มืออาชีพ · อ่านซอร์สก่อนไว้ใจกับมูลค่าจริง
-- **ใช้ลูกเต๋า/เหรียญที่ยุติธรรม** · rejection sampling แก้ bias ตอน *แปลง* ไม่ได้แก้ bias ของ *แหล่งสุ่ม* — ลูกเต๋าลำเอียงอาจอ่อนกว่า CSPRNG ดี ๆ
-- **passphrase คือความลับ** · ใครมีมัน (+ mnemonic ที่รู้) คุมเงินได้ · เก็บบัตรสำรองเหมือนเงินสด/ทองคำ
-- **ทดสอบก่อนใส่เงินจริง** · สร้างตัวทิ้งแล้ว verify ครบวงจร `seed + passphrase → address` แบบ **offline** ก่อน
-- **SALT ปิด** = ผลสุ่ม+ตั้งค่าเดิมสร้าง passphrase ซ้ำได้ · **SALT เปิด** = สร้างซ้ำไม่ได้ ให้สำรองตัว passphrase เอง
-- ให้ **ตามสภาพ ไม่มีการรับประกันใด ๆ** · พี่รับผิดชอบกุญแจและเงินของตนเอง
+- โปรเจกต์นี้เป็นโปรเจกต์ส่วนตัว **ไม่ใช่** ผลิตภัณฑ์ที่ผ่านการ Audit ระดับองค์กร · กรุณาตรวจสอบซอร์สโค้ดด้วยตนเองก่อนนำไปใช้กับสินทรัพย์ที่มีมูลค่าจริง
+- **ใช้ลูกเต๋าหรือเหรียญที่ได้มาตรฐาน** · Rejection Sampling แก้ความเอนเอียงที่เกิดจาก *กระบวนการแปลงค่า (Conversion Bias)* แต่แก้ความเอนเอียงจาก *แหล่งกำเนิด (Source Bias)* ไม่ได้ — ลูกเต๋าที่ไม่ได้มาตรฐานอาจให้ความปลอดภัยต่ำกว่า CSPRNG ทั่วไปเสียอีก
+- **ห้ามใช้ `SIMULATE ROLLS` กับเงินจริง** · ปุ่มนี้มีไว้ทดสอบระบบเท่านั้น เพราะความปลอดภัยจะย้ายไปขึ้นกับ CSPRNG ของระบบปฏิบัติการ ซึ่งคุณตรวจสอบด้วยตาไม่ได้
+- **Passphrase คือความลับสูงสุด** · ผู้ใดได้รหัสนี้ไป (พร้อม Mnemonic Phrase) จะควบคุมสินทรัพย์ได้ทันที · เก็บบัตรสำรองไว้ในที่ปลอดภัยเทียบเท่าเงินสดหรือทองคำ
+- **ทดสอบให้แน่ใจก่อนฝากเงินจริง** · ควรสร้างรหัสทดลองแล้วทดสอบกระบวนการ `Seed + Passphrase → Address` แบบ **ออฟไลน์** ให้ครบวงจรก่อนทุกครั้ง
+- **หากปิด SALT** ผลการสุ่มเดิมกับการตั้งค่าเดิมจะได้ Passphrase ตัวเดิมเสมอ · **หากเปิด SALT** จะสร้างซ้ำไม่ได้ ต้องสำรองตัวรหัส Passphrase เอง
+- ซอฟต์แวร์นี้ให้ **"ตามสภาพที่เป็นอยู่" (As-is) โดยไม่มีการรับประกันใด ๆ ทั้งสิ้น** · ผู้ใช้รับผิดชอบความปลอดภัยของกุญแจและสินทรัพย์ด้วยตนเอง
 
 ---
 
